@@ -106,12 +106,13 @@ public:
    * @param str 描画する文字列
    * @param x 描画領域左上の x 座標
    * @param y 描画領域左上の y 座標
+   * @param charSpace 字間
    */
   template <uint8_t CWidth, uint8_t CHeight>
-  void writeString(const String &str, ssize_t x, ssize_t y) {
+  void writeString(const String &str, ssize_t x, ssize_t y, ssize_t charSpace = 1) {
     ssize_t char_x = x;
     for (size_t i = 0; i < str.length(); i++)
-      char_x += writeChar<CWidth, CHeight>(str[i], char_x, y) + 1;
+      char_x += writeChar<CWidth, CHeight>(str[i], char_x, y) + charSpace;
   }
 
   /**
@@ -122,12 +123,13 @@ public:
    * @param str 描画する文字列
    * @param x 描画領域左上の x 座標
    * @param y 描画領域左上の y 座標
+   * @param charSpace 字間
    */
   template <uint8_t CWidth, uint8_t CHeight>
-  void writeString(const std::u16string &str, ssize_t x, ssize_t y) {
+  void writeString(const std::u16string &str, ssize_t x, ssize_t y, ssize_t charSpace = 1) {
     ssize_t char_x = x;
     for (size_t i = 0; i < str.length(); i++)
-      char_x += writeChar<CWidth, CHeight>(str.at(i), char_x, y) + 1;
+      char_x += writeChar<CWidth, CHeight>(str.at(i), char_x, y) + charSpace;
   }
 
   /**
@@ -140,9 +142,10 @@ public:
    * @param x 描画領域左上の x 座標
    * @param y 描画領域左上の y 座標
    * @param width 描画領域の幅
-   */
+    * @param charSpace 字間
+  */
   template <uint8_t CWidth, uint8_t CHeight>
-  void writeInteger(long value, uint8_t zero_pad, ssize_t x, ssize_t y, size_t width) {
+  void writeInteger(long value, uint8_t zero_pad, ssize_t x, ssize_t y, size_t width, ssize_t charSpace = 1) {
 
     static constexpr size_t buf_size = 2 + 8 * sizeof(long);
 
@@ -160,33 +163,7 @@ public:
     while (str.length() > 0 && (real_width = calcRequiredWidth<CWidth, CHeight>(str)) > width)
       str = str.substring(1, str.length());
 
-    writeString<CWidth, CHeight>(str, x + width - real_width, y);
-
-    // auto is_minus         = value < 0;
-    // auto int_part_s       = String(value);
-    // auto avail_digs_count = calcAvailableChars(width, CWidth);
-    //
-    // // 描画領域右端の x 座標
-    // ssize_t right_edge_x = x + width;
-    //
-    // // 下位桁から描画
-    // for (size_t i = 0; i < avail_digs_count; i++) {
-    //
-    //   // この桁の左上 x 座標
-    //   ssize_t dig_x = right_edge_x + 1 - (i + 1) * (CWidth + 1);
-    //
-    //   if (i < int_part_s.length()) {
-    //     writeChar<CWidth, CHeight>(int_part_s[int_part_s.length() - (i + 1)], dig_x, y);
-    //     continue;
-    //   }
-    //
-    //   if (zero_pad && !is_minus) {
-    //     writeChar<CWidth, CHeight>(u'0', dig_x, y);
-    //     continue;
-    //   }
-    //
-    //   break;
-    // }
+    writeString<CWidth, CHeight>(str, x + width - real_width, y, charSpace);
   }
 
   /**
@@ -199,9 +176,10 @@ public:
    * @param x 描画領域左上の x 座標
    * @param y 描画領域左上の y 座標
    * @param width 描画領域の幅
+   * @param charSpace 字間
    */
   template <uint8_t CWidth, uint8_t CHeight>
-  void writeReal(double value, uint8_t prec_max, ssize_t x, ssize_t y, size_t width) {
+  void writeReal(double value, uint8_t prec_max, ssize_t x, ssize_t y, size_t width, ssize_t charSpace = 1) {
 
     int    prec       = std::min(static_cast<int>(prec_max), 30);
     size_t real_width = width;
@@ -220,50 +198,7 @@ public:
         str = str.substring(1, str.length());
     }
 
-    writeString<CWidth, CHeight>(str, x + width - real_width, y);
-
-    // auto is_minus = value < 0.0f;
-    //
-    // float int_part_f;
-    // auto  frac_part = std::modf(std::abs(value), &int_part_f);
-    // auto  int_part  = static_cast<long>(int_part_f);
-    // if (is_minus)
-    //   int_part = -int_part;
-    //
-    // auto avail_digs_count_i = calcAvailableChars(width, CWidth);
-    // auto int_part_s         = String(int_part);
-    //
-    // // 描画できる小数点以下の桁数を計算
-    // auto remain_space = static_cast<ssize_t>(width) - static_cast<ssize_t>(calcRequiredWidth(int_part_s, CWidth));
-    // auto prec         = calcAvailableChars(remain_space, CWidth);
-
-    // if (prec != 0 && (int_part_s.length() + prec) * (CWidth + 1) + 1 > width) {
-    //   --prec;
-    // }
-    //
-    // if (prec == 0) {
-    //   writeDecimal<CWidth, CHeight>(value_rounded, zero_pad, x, y, width);
-    //   return;
-    // }
-    //
-    // // 使用領域左端をゼロとしたときの、小数点の x 座標
-    // size_t dot_dx = x + width - prec * (CWidth + 1) - 1;
-    //
-    // this->clear(x, y, width, CHeight);
-    //
-    // writeDecimal<CWidth, CHeight>(static_cast<long>(int_part), zero_pad, x, y, dot_dx - 1);
-    //
-    // auto frac_part_s = String(std::abs(frac_part));
-    //
-    // for (uint8_t i = 0; i < prec; i++) {
-    //
-    //   size_t dig_dx = x + dot_dx + 2 + i * (CWidth + 1);
-    //
-    //   if (frac_part_s.length() >= i + 2)
-    //     writeChar<CWidth, CHeight>(u'0', dig_dx, y);
-    //   else
-    //     writeChar<CWidth, CHeight>(frac_part_s[i + 2], dig_dx, y);
-    // }
+    writeString<CWidth, CHeight>(str, x + width - real_width, y, charSpace);
   }
 };
 
