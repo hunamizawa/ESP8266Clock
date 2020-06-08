@@ -173,14 +173,14 @@ void loop() {
   static uint8_t     brightness_count = 0;
 
   // 現在時刻
-  auto new_tm = pftime::localtime(nullptr, &usec);
+  auto new_tm = *pftime::localtime(nullptr, &usec);
 
   changePaneIfSELPushed();
 
-  updateDisplay(*new_tm, usec);
+  updateDisplay(new_tm, usec);
 
-  if (*new_tm != tm) {
-    tm = *new_tm;
+  if (new_tm != tm) {
+    tm = new_tm;
 
     // この節は1秒に1回だけ実行される
 

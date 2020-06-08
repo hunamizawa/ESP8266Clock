@@ -35,10 +35,13 @@ SPI 経由で MAX7219 に送られ、LEDモジュールの表示が更新され�
 #ifndef MAX7219Display_BufferBase_H_
 #define MAX7219Display_BufferBase_H_
 
-#include "bitset.h"
 #include "IBuffer.h"
+#include "bitset.h"
 #include <array>
+#include <limits>
 #include <stdint.h>
+
+static constexpr ssize_t SSIZE_T_MAX = std::numeric_limits<ssize_t>::max();
 
 namespace MAX7219 {
 
@@ -72,10 +75,10 @@ private:
    * @return false 対象範囲は描画可能領域に含まれる
    */
   bool isOutOfBound(ssize_t x, ssize_t y, size_t width, size_t height) const {
-    return x >= BufferWidth ||
-           y >= BufferHeight ||
-           x + width <= 0 ||
-           y + height <= 0;
+    return x >= static_cast<ssize_t>(BufferWidth) ||
+           y >= static_cast<ssize_t>(BufferHeight) ||
+           x + static_cast<ssize_t>(width) <= 0 ||
+           y + static_cast<ssize_t>(height) <= 0;
   }
 
   /**
@@ -87,8 +90,8 @@ private:
    * @return false 対象座標は描画可能領域に含まれる
    */
   bool isOutOfBound(ssize_t x, ssize_t y) const {
-    return x >= BufferWidth ||
-           y >= BufferHeight ||
+    return x >= static_cast<ssize_t>(BufferWidth) ||
+           y >= static_cast<ssize_t>(BufferHeight) ||
            x < 0 ||
            y < 0;
   }
@@ -117,7 +120,7 @@ public:
    * @brief T[] 型で表されたグラフィックを指定位置に描画する
    * 
    * @tparam Tdata 
-   * @param data グラフィックデータ（画像）
+   * @param data グラフィックデータ（画像）を表す配列
    * @param x 描画先の左上隅の x 座標
    * @param y 描画先の左上隅の y 座標
    * @param width グラフィックの有効幅
@@ -125,6 +128,10 @@ public:
    */
   template <class Tdata>
   void write(const Tdata *data, ssize_t x, ssize_t y, size_t width, size_t height) {
+
+    assert(width <= SSIZE_T_MAX);
+    assert(height <= SSIZE_T_MAX);
+
     if (!data)
       return;
 
@@ -133,13 +140,12 @@ public:
     if (isOutOfBound(x, y, width, height))
       return;
 
-    size_t actual_width = width + std::min(x, 0);
-    size_t right_space  = BufferWidth - x - actual_width;
+    size_t actual_width = static_cast<ssize_t>(width) + std::min(x, 0);
+    size_t right_space  = static_cast<ssize_t>(BufferWidth) - x - static_cast<ssize_t>(width);
 
     size_t buf_i;
-    for (size_t data_i = -std::min(y, 0); data_i < height && (buf_i = y + data_i) < _buffer.size(); data_i++) {
+    for (size_t data_i = -std::min(y, 0); data_i < height && (buf_i = y + static_cast<ssize_t>(data_i)) < _buffer.size(); data_i++) {
       auto d = TBitset(data[data_i]) << right_space;
-      //Serial.println(d.to_string(' ', '*').c_str());
       _buffer.at(buf_i).setRange(right_space, actual_width, false);
       _buffer.at(buf_i) |= d;
     }
@@ -149,7 +155,7 @@ public:
    * @brief std::array<T, Height> 型で表されたグラフィックを指定位置に描画する
    * 
    * @tparam Tdata 
-   * @param data グラフィックデータ（画像）
+   * @param data グラフィックデータ（画像）を表す配列
    * @param x 描画先の左上隅の x 座標
    * @param y 描画先の左上隅の y 座標
    * @param width グラフィックの有効幅
@@ -166,9 +172,13 @@ public:
    * @param x 対象ドットの x 座標
    * @param y 対象ドットの y 座標
    */
-  void turnDot(bool is_on, size_t x, size_t y) {
-    size_t bit_i          = BufferWidth - x - 1;
-    size_t buf_i          = y;
+  void turnDot(bool is_on, ssize_t x, ssize_t y) {
+
+    if (isOutOfBound(x, y))
+      return;
+
+    size_t bit_i             = BufferWidth - x - 1;
+    size_t buf_i             = y;
     _buffer.at(buf_i)[bit_i] = is_on;
   }
 
@@ -181,6 +191,10 @@ public:
    * @param height 領域の高さ
    */
   void clear(ssize_t x, ssize_t y, size_t width, size_t height) {
+
+    assert(width <= SSIZE_T_MAX);
+    assert(height <= SSIZE_T_MAX);
+
     if (isOutOfBound(x, y, width, height))
       return;
 
@@ -194,7 +208,7 @@ public:
     }
 
     size_t actual_width = width;
-    size_t right_space  = BufferWidth - x - actual_width;
+    size_t right_space  = static_cast<ssize_t>(BufferWidth) - x - static_cast<ssize_t>(width);
 
     size_t buf_i;
     for (size_t data_i = -std::min(y, 0); data_i < height && (buf_i = y + data_i) < _buffer.size(); data_i++) {
