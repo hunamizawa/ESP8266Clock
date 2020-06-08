@@ -110,18 +110,16 @@ void Display::send() {
 
     for (size_t dev_i = 0; dev_i < dev_size; dev_i++) {
       auto    dev       = _devices.at(dev_i);
-      size_t  topLeft_x = dev.device_x * 8U;
-      size_t  topLeft_y = dev.device_y * 8U;
       uint8_t data;
 
       if (dev.rotation == Rotate::Clockwise)
-        data = _buffer->getVerticalFrom(topLeft_x + digit, topLeft_y, !dev.reverse);
+        data = _buffer->getVerticalFrom(dev.topleft_x + digit, dev.topleft_y, !dev.reverse);
       else if (dev.rotation == Rotate::_180)
-        data = _buffer->getHorizontialFrom(topLeft_x, topLeft_y + 7 - digit, !dev.reverse);
+        data = _buffer->getHorizontialFrom(dev.topleft_x, dev.topleft_y + 7 - digit, !dev.reverse);
       else if (dev.rotation == Rotate::Counterclockwise)
-        data = _buffer->getVerticalFrom(topLeft_x + 7 - digit, topLeft_y, dev.reverse);
+        data = _buffer->getVerticalFrom(dev.topleft_x + 7 - digit, dev.topleft_y, dev.reverse);
       else /* Rotate::_0 */
-        data = _buffer->getHorizontialFrom(topLeft_x, topLeft_y + digit, dev.reverse);
+        data = _buffer->getHorizontialFrom(dev.topleft_x, dev.topleft_y + digit, dev.reverse);
 
       // 遠いデバイスから順に送る
       size_t addr       = (dev_size - dev_i - 1) * 2;

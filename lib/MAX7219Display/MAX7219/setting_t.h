@@ -21,8 +21,8 @@ enum class Rotate {
  * 
  */
 typedef struct {
-  uint8_t device_x;
-  uint8_t device_y;
+  uint8_t topleft_x;
+  uint8_t topleft_y;
   Rotate  rotation;
   bool    reverse;
 } setting_t;
