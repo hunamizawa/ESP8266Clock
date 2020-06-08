@@ -234,11 +234,12 @@ public:
    * @return const uint8_t 
    */
   virtual const uint8_t getHorizontialFrom(size_t x, size_t y, bool swap) const {
+
     if (isOutOfBound(x, y))
       return 0;
 
-    auto retval = _buffer.at(y).template range<8>(x);
-    if (!swap)
+    auto retval = _buffer.at(y).template range<8>(BufferWidth - x - 8);
+    if (swap)
       retval.swap();
     return static_cast<uint8_t>(retval.to_ulong());
   }
@@ -255,7 +256,7 @@ public:
       return 0;
 
     auto   retval   = MAX7219::bitset<8>();
-    size_t actual_x = BufferWidth - x - 1;
+    size_t actual_x = BufferWidth - x - 8;
 
     if (swap) {
       for (size_t i = -std::min(y, 0U); i < 8 && i < _buffer.size(); i++)
@@ -279,7 +280,7 @@ public:
    * @brief 現在のバッファの内容を Serial へ出力する。
    * 
    */
-  void printToSerial() const {
+  virtual void printToSerial() const {
     Serial.println(std::string(BufferWidth, '-').c_str());
     for (size_t i = 0; i < _buffer.size(); i++) {
       auto bstr = _buffer.at(i).to_string(' ', '*');

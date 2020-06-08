@@ -66,6 +66,7 @@ public:
    * @tparam Nout 範囲の長さ
    * @param start 範囲の始点（start >= N の場合は assert が fail）
    * @return MAX7219::bitset<Nout> 
+   * @remark start + Nout > N の場合、余った部分は 0 で埋められる
    */
   template <size_t Nout>
   MAX7219::bitset<Nout> range(size_t start) const {

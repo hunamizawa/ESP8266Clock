@@ -41,14 +41,14 @@ static constexpr uint8_t PORT_SEL = 5;
 const std::vector<MAX7219::setting_t> _buffer_settings = {
     // {X, Y, 向き, 反転}
     // ESP8266 から見て遠い順に書く
-    {0, 8, MAX7219::Rotate::_0, true},
-    {8, 8, MAX7219::Rotate::_0, true},
-    {16, 8, MAX7219::Rotate::_0, true},
-    {24, 8, MAX7219::Rotate::_0, true},
-    {24, 0, MAX7219::Rotate::_180, true},
-    {16, 0, MAX7219::Rotate::_180, true},
-    {8, 0, MAX7219::Rotate::_180, true},
-    {0, 0, MAX7219::Rotate::_180, true},
+    {24, 8, MAX7219::Rotate::_0,   false},
+    {16, 8, MAX7219::Rotate::_0,   false},
+    {8,  8, MAX7219::Rotate::_0,   false},
+    {0,  8, MAX7219::Rotate::_0,   false},
+    {0,  0, MAX7219::Rotate::_180, false},
+    {8,  0, MAX7219::Rotate::_180, false},
+    {16, 0, MAX7219::Rotate::_180, false},
+    {24, 0, MAX7219::Rotate::_180, false},
 };
 
 #endif // ESP8266Clock_Setting_H_
