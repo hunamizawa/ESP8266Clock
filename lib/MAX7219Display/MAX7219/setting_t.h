@@ -1,3 +1,7 @@
+/**
+ * @file setting_t.h
+ */
+
 #ifndef MAX7219Display_setting_t_H_
 #define MAX7219Display_setting_t_H_
 

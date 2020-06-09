@@ -1,3 +1,8 @@
+/**
+ * @file setting.h
+ * @brief ビルド時設定用ヘッダファイル
+ */
+
 #ifndef ESP8266Clock_Setting_H_
 #define ESP8266Clock_Setting_H_
 

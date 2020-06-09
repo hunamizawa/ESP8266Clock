@@ -1,3 +1,8 @@
+/**
+ * @file main_network.cpp
+ * @brief part of the main.cpp
+ */
+
 #include "main.h"
 #include <WiFiManager.h>
 

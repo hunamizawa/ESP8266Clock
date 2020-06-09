@@ -1,3 +1,8 @@
+/**
+ * @file myutil.h
+ * @brief 便利関数置き場
+ */
+
 #ifndef ESP8266Util_H_
 #define ESP8266Util_H_
 

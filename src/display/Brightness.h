@@ -1,3 +1,7 @@
+/**
+ * @file Brightness.h
+ */
+
 #ifndef Brightness_H_
 #define Brightness_H_
 

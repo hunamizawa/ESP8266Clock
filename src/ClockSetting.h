@@ -1,3 +1,7 @@
+/**
+ * @file ClockSetting.h
+ */
+
 #ifndef ClockSetting_H_
 #define ClockSetting_H_
 

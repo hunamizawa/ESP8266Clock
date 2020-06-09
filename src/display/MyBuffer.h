@@ -1,3 +1,7 @@
+/**
+ * @file MyBuffer.h
+ */
+
 #ifndef MYBUFFER_H_
 #define MYBUFFER_H_
 

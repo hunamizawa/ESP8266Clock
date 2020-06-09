@@ -6,7 +6,7 @@
 
 #define FUNCDEF_GETGLYPH(w, h)                                                   \
   template <>                                                                    \
-  bool MyGraphics::tryGetGlyph<w, h>(char16_t c, uint8_t *retval) const {          \
+  bool MyGraphics::tryGetGlyph<w, h>(char16_t c, uint8_t *retval) const {        \
     return tryGetGlyphPtr<h>(glyph##w##x##h, glyph##w##x##h##_chars, c, retval); \
   }
 

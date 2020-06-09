@@ -1,3 +1,7 @@
+/**
+ * @file Display.h
+ */
+
 #ifndef MAX7219Display_Display_H_
 #define MAX7219Display_Display_H_
 

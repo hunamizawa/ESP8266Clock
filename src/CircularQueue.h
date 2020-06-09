@@ -1,3 +1,7 @@
+/**
+ * @file CircularQueue.h
+ */
+
 #ifndef CircularQueue_H_
 #define CircularQueue_H_
 

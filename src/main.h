@@ -1,3 +1,7 @@
+/**
+ * @file main.h
+ */
+
 #ifndef ESP8266Clock_main_H_
 #define ESP8266Clock_main_H_
 

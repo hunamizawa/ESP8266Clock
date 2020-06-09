@@ -1,5 +1,9 @@
-#ifndef Graphics_H_
-#define Graphics_H_
+/**
+ * @file MyGraphics.h
+ */
+
+#ifndef MyGraphics_H_
+#define MyGraphics_H_
 
 #include <Arduino.h>
 #include <array>
@@ -35,4 +39,4 @@ extern const std::array<uint32_t, 16> con_fail;
 
 } // namespace ConstGraphics
 
-#endif // Graphics_H_
+#endif // MyGraphics_H_

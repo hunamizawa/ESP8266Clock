@@ -1,3 +1,7 @@
+/**
+ * @file envdata_t.h
+ */
+
 #ifndef envdata_t_H_
 #define envdata_t_H_
 

@@ -1,3 +1,8 @@
+/**
+ * @file const.h
+ * @brief 不変の定数を定義するファイル
+ */
+
 #ifndef ESP8266Clock_CONST_H_
 #define ESP8266Clock_CONST_H_
 

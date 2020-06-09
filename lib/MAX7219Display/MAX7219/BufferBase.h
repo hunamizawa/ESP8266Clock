@@ -21,16 +21,15 @@ namespace MAX7219 {
  * @tparam BufferWidth バッファ領域の幅
  * @tparam BufferHeight バッファ領域の高さ
  *
- * @details
- * ==================================
- * MAX7219::BufferBase::_buffer の説明
- * ==================================
- * MAX7219::BufferBase は、LED モジュール用のフレームバッファです。
- * LED モジュールに表示させるグラフィックを、std::array<std::bitset<BufferWidth>, BufferHeight> の形で管理します。
+ * @par 内部実装
+ * @parblock
+ * MAX7219::BufferBase は、%MAX7219 LED モジュール用のフレームバッファです。
+ * LED モジュールに表示させるグラフィックを、std::array<std::bitset<BufferWidth>, BufferHeight> の形で内部で保持しています。
  * 
  * 例えば MAX7219::BufferBase<24, 16> の場合、
- * _buffer[] はマトリックスLEDに対して、次のようにマッピングされます。
+ * 内部配列 @c _buffer は、マトリックス LED に対して次のようにマッピングされます。
  * 
+ * @verbatim
  *        x: 0 1 ...     7 8 9 ...    15 16 17 ...  23
  *          ┌─────────────┬─────────────┬─────────────┐
  *          │[23](MSB)                        [0](LSB)│
@@ -46,17 +45,21 @@ namespace MAX7219 {
  *  ↑     ↑ └─────────────┴─────────────┴─────────────┘
  *  |     └ y
  *  └ device_y
+ * @endverbatim
  * 
  * ※bitset の 0 番目の要素は右端に来ることに注意して下さい。
  * 
  * すなわち、座標 (x, y) の ON/OFF は、
- * _buffer[y][BufferWidth - x - 1] にアクセスすることで取得・設定できます。
+ * <tt>_buffer[y][BufferWidth - x - 1]</tt> にアクセスすることで取得・設定できます。
  * 例えば上図において (3, 5) を ON にするなら
+ * @code
  *   _buffer[5][24 - 3 - 1] = true;
+ * @endcode
  * とします。
  * 
- * _buffer に加えた変更は、MAX7219::Display::send() を呼び出すことにより
- * SPI 経由で MAX7219 に送られ、LEDモジュールの表示が更新されます。
+ * @c _buffer に加えた変更は、Display::send() を呼び出すことにより
+ * SPI 経由で %MAX7219 に送られ、LED モジュールの表示が更新されます。
+ * @endparblock
  */
 template <size_t BufferWidth, size_t BufferHeight>
 class BufferBase : public IBuffer {
@@ -132,14 +135,15 @@ public:
   virtual ~BufferBase() = default;
 
   /**
-   * @brief T[] 型で表されたグラフィックを指定位置に描画する
+   * @brief @e Tdata [] 配列で表されたグラフィックを指定位置に描画する
    * 
-   * @tparam Tdata 
+   * @tparam Tdata 配列の型
    * @param data グラフィックデータ（画像）を表す配列
    * @param x 描画先の左上隅の x 座標
    * @param y 描画先の左上隅の y 座標
    * @param width グラフィックの有効幅
    * @param height グラフィックの高さ = data の要素数
+   * @note @e Tdata の型は unsigned char (= uint8_t), unsigned int (= uint16_t), unsigned long (= uint32_t), unsigned long long (= uint64_t) のいずれかであるべき。
    */
   template <class Tdata>
   void write(const Tdata *data, ssize_t x, ssize_t y, size_t width, size_t height) {
@@ -169,13 +173,14 @@ public:
   }
 
   /**
-   * @brief std::array<T, Height> 型で表されたグラフィックを指定位置に描画する
+   * @brief std::array<Tdata, Height> 型で表されたグラフィックを指定位置に描画する
    * 
-   * @tparam Tdata 
+   * @tparam Tdata 配列の型
    * @param data グラフィックデータ（画像）を表す配列
    * @param x 描画先の左上隅の x 座標
    * @param y 描画先の左上隅の y 座標
    * @param width グラフィックの有効幅
+   * @note @e Tdata の型は unsigned char (= uint8_t), unsigned int (= uint16_t), unsigned long (= uint32_t), unsigned long long (= uint64_t) のいずれかであるべき。
    */
   template <class Tdata, size_t Height>
   void write(const std::array<Tdata, Height> &data, ssize_t x, ssize_t y, size_t width) {
@@ -247,11 +252,9 @@ public:
   }
 
   /**
-   * @brief 座標 (x,y) から x 軸方向に 8 ビット分のグラフィックを取得
-   * 
-   * @param x 
-   * @param y 
-   * @return const uint8_t 
+   * @copydoc IBuffer::getHorizontialFrom(size_t, size_t, bool) const
+   * @pre @c x <= std::numeric_limits<ssize_t>::max()
+   * @pre @c y <= std::numeric_limits<ssize_t>::max()
    */
   virtual const uint8_t getHorizontialFrom(size_t x, size_t y, bool swap) const {
 
@@ -272,11 +275,9 @@ public:
   }
 
   /**
-   * @brief 座標 (x,y) から y 軸方向に 8 ビット分のグラフィックを取得
-   * 
-   * @param x 
-   * @param y 
-   * @return const uint8_t 
+   * @copydoc IBuffer::getVerticalFrom(size_t, size_t, bool) const
+   * @pre @c x <= std::numeric_limits<ssize_t>::max()
+   * @pre @c y <= std::numeric_limits<ssize_t>::max()
    */
   virtual const uint8_t getVerticalFrom(size_t x, size_t y, bool swap) const {
 
@@ -303,17 +304,22 @@ public:
     return static_cast<uint8_t>(retval.to_ulong());
   }
 
+  /**
+   * @copydoc IBuffer::getBufferWidth() const
+   */
   virtual const uint8_t getBufferWidth() const {
     return BufferWidth;
   }
 
+  /**
+   * @copydoc IBuffer::getBufferHeight() const
+   */
   virtual const uint8_t getBufferHeight() const {
     return BufferHeight;
   }
 
   /**
-   * @brief 現在のバッファの内容を Serial へ出力する。
-   * 
+   * @copydoc IBuffer::printToSerial()
    */
   virtual void printToSerial() const {
 

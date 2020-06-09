@@ -1,3 +1,7 @@
+/**
+ * @file Buffer.h
+ */
+
 #ifndef MAX7219Display_Buffer_H_
 #define MAX7219Display_Buffer_H_
 
@@ -9,11 +13,32 @@ using std::u16string;
 namespace MAX7219 {
 
 /**
- * @brief MAX7219::BufferBase を継承し、文字・数値の書き込みといった高度な機能を提供するクラス
+ * @brief BufferBase を継承し、文字・数値の書き込みといった高度な機能を提供するクラス
  * 
  * @tparam BufferWidth バッファ領域の幅
  * @tparam BufferHeight バッファ領域の高さ
- * @tparam TGraphics 文字グリフ（フォント）を Buffer に提供してくれるクラス。ユーザーが定義することを想定している
+ * @tparam TGraphics 文字グリフ（フォント）を Buffer に提供してくれるクラス。ユーザーが定義することを想定している。
+ * 
+ * @par TGraphics について
+ * @parblock
+ * @e TGraphics は、ある文字が与えられた時、その文字に対応するグリフ（グラフィック）を返すクラスです。
+ * 
+ * @e TGraphics は、次の public メンバ関数を持っている必要があります。
+ * 
+ * @code
+ * template <uint8_t Width, uint8_t Height>
+ * bool tryGetGlyph(char16_t c, uint8_t *retval) const;
+ * @endcode
+ * 
+ * tryGetGlyph の戻り値は、文字 @c c に対応するグリフが存在する場合は true、そうでないならば false を返して下さい。
+ * 
+ * @c retval には、要素数 Height の uint8_t[] 配列が渡されるので、関数内部で配列に値を割り当てて下さい。
+ * ただし、tryGetGlyph が false を返す場合、 @c retval で返される値は無視されます。
+ * 
+ * なお、 @c retval には nullptr が渡される可能性があります。
+ * 
+ * @e TGraphics のデフォルトパラメータとして指定されている EmptyGraphics は、文字グリフを持たないダミーのクラスです。
+ * @endparblock
  */
 template <size_t BufferWidth, size_t BufferHeight, class TGraphics = EmptyGraphics>
 class Buffer : public BufferBase<BufferWidth, BufferHeight> {

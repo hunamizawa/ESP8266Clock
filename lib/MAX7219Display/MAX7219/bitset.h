@@ -1,3 +1,7 @@
+/**
+ * @file bitset.h
+ */
+
 #ifndef MAX7219Display_bitset_H_
 #define MAX7219Display_bitset_H_
 
@@ -7,6 +11,11 @@
 
 namespace MAX7219 {
 
+/**
+ * @brief std::bitset<N> の拡張
+ * 
+ * @tparam N 要素数
+ */
 template <size_t N>
 class bitset : public std::bitset<N> {
 private:
@@ -21,7 +30,7 @@ public:
   using std::bitset<N>::bitset;
 
   /**
-   * @brief bitset<N> の範囲 [start, start + length) のビットをすべて 1 または 0 にする
+   * @brief bitset の範囲 [start, start + length) のビットをすべて 1 または 0 にする
    *        （LSB = 右端が 0 番目であることに注意）
      * 
    * @param start 範囲の始点（start >= N の場合は assert が fail）
@@ -38,7 +47,7 @@ public:
   }
 
   /**
-   * @brief bitset<N> の範囲 [start, start + length) のビットを反転させる
+   * @brief bitset の範囲 [start, start + length) のビットを反転させる
    *        （LSB = 右端が 0 番目であることに注意）
      * 
    * @param start 範囲の始点（start >= N の場合は assert が fail）
@@ -52,7 +61,6 @@ public:
 
   /**
    * @brief MSB と LSB を入れ替える
-   * 
    */
   void swap() {
     auto old = MAX7219::bitset<N>(*this);
@@ -61,7 +69,7 @@ public:
   }
 
   /**
-   * @brief bitset<N> の範囲 [start, start + Nout) を、新しい bitset<Nout> にコピーして返す
+   * @brief bitset の範囲 [start, start + Nout) を、新しい bitset<Nout> にコピーして返す
    * 
    * @tparam Nout 範囲の長さ
    * @param start 範囲の始点（start >= N の場合は assert が fail）

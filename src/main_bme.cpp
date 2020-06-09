@@ -1,3 +1,8 @@
+/**
+ * @file main_bme.cpp
+ * @brief part of the main.cpp
+ */
+
 #include "main.h"
 #include <SparkFunBME280.h>
 

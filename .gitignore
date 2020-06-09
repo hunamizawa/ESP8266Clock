@@ -45,3 +45,6 @@
 .vscode/ipch
 .vscode/settings.json
 my_config.ini
+
+# Doxygen generated doc
+/doc

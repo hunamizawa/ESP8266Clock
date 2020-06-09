@@ -1,3 +1,7 @@
+/**
+ * @file TZDB.h
+ */
+
 #ifndef ESP8266Clock_TZDB_H
 #define ESP8266Clock_TZDB_H
 

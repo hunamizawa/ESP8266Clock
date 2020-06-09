@@ -1,3 +1,8 @@
+/**
+ * @file MAX7219Display.h
+ * @brief ライブラリの include を 1 行で済ませるためのファイル
+ */
+
 #ifndef MAX7219Display_H_
 #define MAX7219Display_H_
 

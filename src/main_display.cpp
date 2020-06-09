@@ -1,3 +1,8 @@
+/**
+ * @file main_display.cpp
+ * @brief part of the main.cpp
+ */
+
 #include "main.h"
 #include <SPI.h>
 #include <Ticker.h>
