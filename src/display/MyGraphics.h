@@ -3,9 +3,8 @@
 
 #include <Arduino.h>
 #include <array>
-#include <pgmspace.h>
 
-class Graphics {
+class MyGraphics {
 public:
   /**
  * @brief 指定サイズの文字グリフを取得
@@ -20,20 +19,20 @@ public:
   bool tryGetGlyph(char16_t c, uint8_t *retval) const;
 };
 
-namespace GraphicsC {
+namespace ConstGraphics {
 
-/// @brief 「ESP8266Clock」
+//! 「ESP8266Clock」
 extern const std::array<uint32_t, 16> welcome;
 
-/// @brief 「同期中」
+//! 「同期中」
 extern const std::array<uint32_t, 8> douki_chu;
 
-/// @brief 「設定して下さい」
+//! 「設定して下さい」
 extern const std::array<uint32_t, 16> plz_setting;
 
-/// @brief 「Wi-Fi 接続不可」
+//! 「Wi-Fi 接続不可」
 extern const std::array<uint32_t, 16> con_fail;
 
-};
+} // namespace ConstGraphics
 
 #endif // Graphics_H_

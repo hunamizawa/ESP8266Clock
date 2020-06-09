@@ -21,10 +21,10 @@ enum class Rotate {
  * 
  */
 typedef struct {
-  uint8_t topleft_x;
-  uint8_t topleft_y;
-  Rotate  rotation;
-  bool    reverse;
+  size_t topleft_x;
+  size_t topleft_y;
+  Rotate rotation;
+  bool   reverse;
 } setting_t;
 
 } // namespace MAX7219

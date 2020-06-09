@@ -3,7 +3,9 @@
 
 #include <Arduino.h>
 
-/// @brief 気温計測結果を表す struct
+/**
+ * @brief 気温計測結果を表す struct
+ */
 typedef struct EnvData {
   time_t time;
   float  temperature;

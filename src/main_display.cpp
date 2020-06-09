@@ -6,9 +6,9 @@ MyBuffer         _buffer;
 MAX7219::Display _display(SPI_CS_DISPLAY, _buffer, _buffer_settings);
 Brightness       _bn;
 
-/// @brief loop() に到達するまでの間、画面更新を担うタイマー
+//! loop() に到達するまでの間、画面更新を担うタイマー
 static Ticker _timer_update_display_until_setup;
-/// @brief 電源投入2秒後に「同期中...」と表示するためのタイマー
+//! 電源投入2秒後に「同期中...」と表示するためのタイマー
 static Ticker _timer_pane_change;
 
 /**

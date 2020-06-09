@@ -13,7 +13,7 @@
 #include <ESPPerfectTime.h>
 #include <MAX7219Display.h>
 
-/// @brief ユーザーが変更可能な時計の動作設定
+//! ユーザーが変更可能な時計の動作設定
 extern ClockSetting _setting;
 
 // main_display

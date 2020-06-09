@@ -3,14 +3,14 @@
 
 #include "myutil.h"
 #include "../envdata_t.h"
-#include "Graphics.h"
+#include "MyGraphics.h"
 #include "Panes.h"
 #include <IPAddress.h>
 #include <MAX7219Display.h>
 #include <string>
 using std::u16string;
 
-class MyBuffer : public MAX7219::Buffer<32, 16, Graphics> {
+class MyBuffer : public MAX7219::Buffer<32, 16, MyGraphics> {
 private:
   Panes         _pane;
   Panes         _prev_pane;
@@ -31,7 +31,7 @@ private:
 
 public:
   MyBuffer()
-      : MAX7219::Buffer<32, 16, Graphics>::Buffer() {}
+      : MAX7219::Buffer<32, 16, MyGraphics>::Buffer() {}
   DISALLOW_COPY(MyBuffer);
   ALLOW_DEFAULT_MOVE(MyBuffer);
   

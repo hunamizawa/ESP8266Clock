@@ -1,11 +1,12 @@
-#include "Graphics.h"
+#include "MyGraphics.h"
 #include <pgmspace.h>
+#include <vector>
 
 #define ZERO_TO_NINE u'0', u'1', u'2', u'3', u'4', u'5', u'6', u'7', u'8', u'9'
 
 #define FUNCDEF_GETGLYPH(w, h)                                                   \
   template <>                                                                    \
-  bool Graphics::tryGetGlyph<w, h>(char16_t c, uint8_t *retval) const {          \
+  bool MyGraphics::tryGetGlyph<w, h>(char16_t c, uint8_t *retval) const {          \
     return tryGetGlyphPtr<h>(glyph##w##x##h, glyph##w##x##h##_chars, c, retval); \
   }
 
@@ -894,9 +895,9 @@ static const std::vector<char16_t> glyph7x16_chars = {ZERO_TO_NINE};
 
 FUNCDEF_GETGLYPH(7, 16);
 
-namespace GraphicsC {
+namespace ConstGraphics {
 
-/// @brief 「ESP8266Clock」
+//! 「ESP8266Clock」
 const std::array<uint32_t, 16> welcome PROGMEM = {
     0b11110011001110011101110111011100,
     0b10000100101001010100010100010000,
@@ -916,7 +917,7 @@ const std::array<uint32_t, 16> welcome PROGMEM = {
     0b00000000000110001001100011001001,
 };
 
-/// @brief 「同期中」
+//! 「同期中」
 const std::array<uint32_t, 8> douki_chu PROGMEM = {
     0b11111111001010111100001000000000,
     0b10000001011111100100001000000000,
@@ -928,7 +929,7 @@ const std::array<uint32_t, 8> douki_chu PROGMEM = {
     0b10000011010001101100001000000000,
 };
 
-/// @brief 「設定して下さい」
+//! 「設定して下さい」
 const std::array<uint32_t, 16> plz_setting PROGMEM = {
     0b01000100000100000100000000000000,
     0b11101010111111100100000000011111,
@@ -948,7 +949,7 @@ const std::array<uint32_t, 16> plz_setting PROGMEM = {
     0b00010000001110000100000000000000,
 };
 
-/// @brief 「Wi-Fi 接続不可」
+//! 「Wi-Fi 接続不可」
 const std::array<uint32_t, 16> con_fail PROGMEM = {
     0b10001000000011100000000000000000,
     0b10001010000010001000000000000000,
@@ -968,7 +969,7 @@ const std::array<uint32_t, 16> con_fail PROGMEM = {
     0b11011011001001101100010000000110,
 };
 
-} // namespace GraphicsC
+} // namespace ConstGraphics
 
 #undef ZERO_TO_NINE
 #undef FUNCDEF_GETGLYPH

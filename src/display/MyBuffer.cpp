@@ -1,6 +1,6 @@
 #include "MyBuffer.h"
 #include "../main.h"
-#include "Graphics.h"
+#include "MyGraphics.h"
 #include <MAX7219Display.h>
 #include <string>
 using std::u16string;
@@ -101,20 +101,20 @@ void MyBuffer::update(const struct tm &tm, suseconds_t us, const envdata_t &envD
   case Panes::WELCOME:
     /* タイトル画面 */
     this->clearAll();
-    this->write(GraphicsC::welcome, 0, 0, 32);
+    this->write(ConstGraphics::welcome, 0, 0, 32);
     break;
 
   case Panes::REQUIRE_SETTING:
     /* 設定してください */
     this->clearAll();
-    this->write(GraphicsC::plz_setting, 0, 0, 32);
+    this->write(ConstGraphics::plz_setting, 0, 0, 32);
     break;
 
   case Panes::SYNCING_TIME:
     /* 同期中... */
     this->clearAll();
 
-    this->write(GraphicsC::douki_chu, 0, 8, 32);
+    this->write(ConstGraphics::douki_chu, 0, 8, 32);
     // 3点リーダをアニメーションさせる
     this->turnDot((tm.tm_sec & 1) == 0 || us < HALF_OF_SEC_US, 27, 15);
     this->turnDot((tm.tm_sec & 1) == 1 || us >= HALF_OF_SEC_US, 29, 15);
@@ -123,7 +123,7 @@ void MyBuffer::update(const struct tm &tm, suseconds_t us, const envdata_t &envD
 
   case Panes::CONNECT_FAILED:
     /* Wi-Fi 接続不可 */
-    this->write(GraphicsC::con_fail, 0, 0, 32);
+    this->write(ConstGraphics::con_fail, 0, 0, 32);
     break;
 
   case Panes::IP_ADDR:

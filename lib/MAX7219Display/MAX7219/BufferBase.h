@@ -1,36 +1,6 @@
-/*
-==================================
-MAX7219::BufferBase::_buffer の説明
-==================================
-class MAX7219::BufferBase は、LED モジュール用のフレームバッファです。
-LED モジュールに表示させるグラフィックを、uint8_t[] 配列の形で管理します。
-
-例えば MAX7219::BufferBase<3, 2> の場合、
-_buffer[] はマトリックスLEDに対して、次のようにマッピングされます。
-
-       x: 0 1 ...     7 8 9 ...    15 16 17 ...  23
-         ┌─────────────┬─────────────┬─────────────┐
-         │(MSB)                               (LSB)│
- 0     0 │               _buffer[ 0]               │
-       1 │               _buffer[ 1]               │
-     ... │                   ...                   │
-       7 │               _buffer[ 7]               │
-         ├─────────────┼─────────────┼─────────────┤
- 1     8 │               _buffer[ 8]               │
-       9 │               _buffer[ 9]               │
-     ... │                   ...                   │
-      15 │               _buffer[15]               │
- ↑     ↑ └─────────────┴─────────────┴─────────────┘
- |     └ y
- └ device_y
-
-uint8_t の各ビットが、マトリックスLEDの横1行（8ドット）に対応しています。
-例えば 0x80 (== 0b10000000) なら、一番左のドットだけ点灯して、他は消灯します。
-uint8_t を縦方向に積み重ねることで、LEDモジュール全体を表現しています。
-
-_buffer に加えた変更は、MAX7219::Display::send() を呼び出すことにより
-SPI 経由で MAX7219 に送られ、LEDモジュールの表示が更新されます。
-*/
+/**
+ * @file BufferBase.h
+ */
 
 #ifndef MAX7219Display_BufferBase_H_
 #define MAX7219Display_BufferBase_H_
@@ -46,10 +16,47 @@ static constexpr ssize_t SSIZE_T_MAX = std::numeric_limits<ssize_t>::max();
 namespace MAX7219 {
 
 /**
- * @brief MAX7219 ディスプレイに表示するグラフィックを保持し、グラフィックの書き換え・消去といった基本的な機能を提供するクラス
+ * @brief MAX7219 ディスプレイに表示するグラフィックを保持し、グラフィックの書き換え・消去といった基本的な機能を提供するクラス。
  * 
  * @tparam BufferWidth バッファ領域の幅
  * @tparam BufferHeight バッファ領域の高さ
+ *
+ * @details
+ * ==================================
+ * MAX7219::BufferBase::_buffer の説明
+ * ==================================
+ * MAX7219::BufferBase は、LED モジュール用のフレームバッファです。
+ * LED モジュールに表示させるグラフィックを、std::array<std::bitset<BufferWidth>, BufferHeight> の形で管理します。
+ * 
+ * 例えば MAX7219::BufferBase<24, 16> の場合、
+ * _buffer[] はマトリックスLEDに対して、次のようにマッピングされます。
+ * 
+ *        x: 0 1 ...     7 8 9 ...    15 16 17 ...  23
+ *          ┌─────────────┬─────────────┬─────────────┐
+ *          │[23](MSB)                        [0](LSB)│
+ *  0     0 │               _buffer[ 0]               │
+ *        1 │               _buffer[ 1]               │
+ *      ... │                   ...                   │
+ *        7 │               _buffer[ 7]               │
+ *          ├─────────────┼─────────────┼─────────────┤
+ *  1     8 │               _buffer[ 8]               │
+ *        9 │               _buffer[ 9]               │
+ *      ... │                   ...                   │
+ *       15 │               _buffer[15]               │
+ *  ↑     ↑ └─────────────┴─────────────┴─────────────┘
+ *  |     └ y
+ *  └ device_y
+ * 
+ * ※bitset の 0 番目の要素は右端に来ることに注意して下さい。
+ * 
+ * すなわち、座標 (x, y) の ON/OFF は、
+ * _buffer[y][BufferWidth - x - 1] にアクセスすることで取得・設定できます。
+ * 例えば上図において (3, 5) を ON にするなら
+ *   _buffer[5][24 - 3 - 1] = true;
+ * とします。
+ * 
+ * _buffer に加えた変更は、MAX7219::Display::send() を呼び出すことにより
+ * SPI 経由で MAX7219 に送られ、LEDモジュールの表示が更新されます。
  */
 template <size_t BufferWidth, size_t BufferHeight>
 class BufferBase : public IBuffer {
@@ -61,8 +68,11 @@ private:
   using TBitset = MAX7219::bitset<BufferWidth>;
   using TBuffer = std::array<TBitset, BufferHeight>;
 
-  TBuffer _buffer; // グラフィックを保持している配列（VRAMのようなもの）
-  //TBuffer _changed_area;        // 更新された範囲を追跡するための配列
+  static constexpr ssize_t BufferWidth_S  = static_cast<ssize_t>(BufferWidth);
+  static constexpr ssize_t BufferHeight_S = static_cast<ssize_t>(BufferHeight);
+
+  TBuffer _buffer; //! グラフィックを保持している配列（VRAMのようなもの）
+  //TBuffer _changed_area;        //! 更新された範囲を追跡するための配列
 
   /**
    * @brief 対象範囲が描画可能領域に含まれるかチェック
@@ -75,8 +85,9 @@ private:
    * @return false 対象範囲は描画可能領域に含まれる
    */
   bool isOutOfBound(ssize_t x, ssize_t y, size_t width, size_t height) const {
-    return x >= static_cast<ssize_t>(BufferWidth) ||
-           y >= static_cast<ssize_t>(BufferHeight) ||
+
+    return x >= BufferWidth_S ||
+           y >= BufferHeight_S ||
            x + static_cast<ssize_t>(width) <= 0 ||
            y + static_cast<ssize_t>(height) <= 0;
   }
@@ -90,13 +101,15 @@ private:
    * @return false 対象座標は描画可能領域に含まれる
    */
   bool isOutOfBound(ssize_t x, ssize_t y) const {
-    return x >= static_cast<ssize_t>(BufferWidth) ||
-           y >= static_cast<ssize_t>(BufferHeight) ||
+
+    return x >= BufferWidth_S ||
+           y >= BufferHeight_S ||
            x < 0 ||
            y < 0;
   }
 
   bool isOutOfBound(size_t x, size_t y) const {
+
     return x >= BufferWidth ||
            y >= BufferHeight;
   }
@@ -105,11 +118,13 @@ public:
   // Disallow copy
   BufferBase(const BufferBase &) = delete;
   BufferBase &operator=(const BufferBase &) = delete;
+
   // Allow default move
   BufferBase(BufferBase &&) = default;
   BufferBase &operator=(BufferBase &&) = default;
 
   BufferBase() {
+
     _buffer = TBuffer();
     //_changed_area = TBuffer();
   }
@@ -129,6 +144,7 @@ public:
   template <class Tdata>
   void write(const Tdata *data, ssize_t x, ssize_t y, size_t width, size_t height) {
 
+    // ssize_t にキャストしても値が壊れないことを保証
     assert(width <= SSIZE_T_MAX);
     assert(height <= SSIZE_T_MAX);
 
@@ -140,8 +156,9 @@ public:
     if (isOutOfBound(x, y, width, height))
       return;
 
-    size_t actual_width = static_cast<ssize_t>(width) + std::min(x, 0);
-    size_t right_space  = static_cast<ssize_t>(BufferWidth) - x - static_cast<ssize_t>(width);
+    auto   width_s      = static_cast<ssize_t>(width);
+    size_t right_space  = BufferWidth_S - x - width_s; // グラフィックの右端と _buffer 右端の距離
+    size_t actual_width = width_s + std::min(x, 0);
 
     size_t buf_i;
     for (size_t data_i = -std::min(y, 0); data_i < height && (buf_i = y + static_cast<ssize_t>(data_i)) < _buffer.size(); data_i++) {
@@ -192,6 +209,7 @@ public:
    */
   void clear(ssize_t x, ssize_t y, size_t width, size_t height) {
 
+    // ssize_t にキャストしても値が壊れないことを保証
     assert(width <= SSIZE_T_MAX);
     assert(height <= SSIZE_T_MAX);
 
@@ -206,9 +224,10 @@ public:
       height += y;
       y = 0;
     }
+    // x >= 0, y >= 0 が保証される
 
     size_t actual_width = width;
-    size_t right_space  = static_cast<ssize_t>(BufferWidth) - x - static_cast<ssize_t>(width);
+    size_t right_space  = BufferWidth_S - x - static_cast<ssize_t>(width);
 
     size_t buf_i;
     for (size_t data_i = -std::min(y, 0); data_i < height && (buf_i = y + data_i) < _buffer.size(); data_i++) {
@@ -220,6 +239,7 @@ public:
    * @brief 全領域をクリア
    */
   void clearAll() {
+
     for (size_t i = 0; i < _buffer.size(); i++) {
       _buffer.at(i).reset();
       //_changed_area[i].set();
@@ -235,12 +255,19 @@ public:
    */
   virtual const uint8_t getHorizontialFrom(size_t x, size_t y, bool swap) const {
 
-    if (isOutOfBound(x, y))
+    // ssize_t にキャストしても値が壊れないことを保証
+    assert(x <= SSIZE_T_MAX);
+    assert(y <= SSIZE_T_MAX);
+
+    if (isOutOfBound(x, y, 8, 1) || y >= BufferHeight_S)
       return 0;
 
-    auto retval = _buffer.at(y).template range<8>(BufferWidth - x - 8);
+    ssize_t            bitset_start_i = BufferWidth_S - x - 8;
+    MAX7219::bitset<8> retval         = _buffer.at(y).template range<8>(bitset_start_i);
+
     if (swap)
       retval.swap();
+
     return static_cast<uint8_t>(retval.to_ulong());
   }
 
@@ -252,18 +279,26 @@ public:
    * @return const uint8_t 
    */
   virtual const uint8_t getVerticalFrom(size_t x, size_t y, bool swap) const {
-    if (isOutOfBound(x, y))
+
+    // ssize_t にキャストしても値が壊れないことを保証
+    assert(x <= SSIZE_T_MAX);
+    assert(y <= SSIZE_T_MAX);
+
+    if (isOutOfBound(x, y, 1, 8))
       return 0;
 
-    auto   retval   = MAX7219::bitset<8>();
-    size_t actual_x = BufferWidth - x - 8;
+    ssize_t bitset_i = BufferWidth_S - x - 1;
+    if (bitset_i < 0)
+      return 0;
+
+    auto retval = MAX7219::bitset<8>();
 
     if (swap) {
-      for (size_t i = -std::min(y, 0U); i < 8 && i < _buffer.size(); i++)
-        retval[i] = _buffer.at(y)[actual_x];
+      for (size_t i = -std::min(y, 0U); i < 8 && y + i < _buffer.size(); i++)
+        retval[7 - i] = _buffer.at(y + i)[bitset_i];
     } else {
-      for (size_t i = -std::min(y, 0U); i < 8 && i < _buffer.size(); i++)
-        retval[7 - i] = _buffer.at(y)[actual_x];
+      for (size_t i = -std::min(y, 0U); i < 8 && y + i < _buffer.size(); i++)
+        retval[i] = _buffer.at(y + i)[bitset_i];
     }
     return static_cast<uint8_t>(retval.to_ulong());
   }
@@ -281,8 +316,12 @@ public:
    * 
    */
   virtual void printToSerial() const {
+
+    // 区切り線
     Serial.println(std::string(BufferWidth, '-').c_str());
+
     for (size_t i = 0; i < _buffer.size(); i++) {
+
       auto bstr = _buffer.at(i).to_string(' ', '*');
       Serial.println(bstr.c_str());
     }

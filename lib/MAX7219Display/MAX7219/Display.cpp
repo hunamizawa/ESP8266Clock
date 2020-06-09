@@ -34,16 +34,9 @@ static void inline transfer(uint8_t address, uint8_t data) {
 Display::Display(const int pin_cs, const IBuffer &buffer, const std::vector<setting_t> &devices)
     : _pin_cs(pin_cs)
     , _buffer(&buffer)
-    , _devices(devices) {}
+    , _devices(devices.cbegin(), devices.cend()) {}
 
-// void Display::broadcast(uint8_t address, uint8_t data) {
-//   CS_LOW();
-//   for (size_t i = 0; i < _devices.size(); i++)
-//     transfer(address, data);
-//   CS_HIGH();
-// }
-
-void Display::broadcast(uint8_t address, uint8_t data) {
+void Display::broadcast(uint8_t address, uint8_t data) const {
   size_t  size = _devices.size() * 2;
   uint8_t spiData[size];
 
@@ -61,7 +54,7 @@ void Display::broadcast(uint8_t address, uint8_t data) {
   CS_HIGH();
 }
 
-void Display::init() {
+void Display::init() const {
   pinMode(_pin_cs, OUTPUT);
   CS_HIGH();
 
@@ -72,24 +65,24 @@ void Display::init() {
   broadcast(OP_DECODEMODE, 0);
 }
 
-void Display::testMode(bool value) {
+void Display::testMode(bool value) const {
   broadcast(OP_DISPLAYTEST, value ? 1 : 0);
 }
 
-void Display::shutdownMode(bool value) {
+void Display::shutdownMode(bool value) const {
   broadcast(OP_SHUTDOWN, value ? 0 : 1);
 }
 
-void Display::setIntensity(uint8_t intensity) {
+void Display::setIntensity(uint8_t intensity) const {
   broadcast(OP_INTENSITY, intensity);
 }
 
-void Display::clearAll() {
+void Display::clearAll() const {
   for (uint8_t opcode = OP_DIGIT0; opcode <= OP_DIGIT7; opcode++)
     broadcast(opcode, 0);
 }
 
-void Display::send() {
+void Display::send() const {
 
 #if defined(DEBUG) || defined(__PLATFORMIO_BUILD_DEBUG__)
   _buffer->printToSerial();
@@ -102,9 +95,10 @@ void Display::send() {
   // 送信するデータの長さ
   size_t size = dev_size * 2U;
 
-  for (uint8_t digit = 0; digit < 8; digit++) {
+  for (size_t row = 0; row < 8; row++) {
     
-    uint8_t opcode = OP_DIGIT0 + digit;
+    // MAX7219 モジュールでは、LED 上端が OP_DIGIT7、下端が OP_DIGIT0 に対応する。
+    uint8_t opcode = OP_DIGIT7 - row;
 
     uint8_t spiData[size];
 
@@ -113,16 +107,16 @@ void Display::send() {
       uint8_t data;
 
       if (dev.rotation == Rotate::Clockwise)
-        data = _buffer->getVerticalFrom(dev.topleft_x + digit, dev.topleft_y, !dev.reverse);
+        data = _buffer->getVerticalFrom(dev.topleft_x + row, dev.topleft_y, !dev.reverse);
       else if (dev.rotation == Rotate::_180)
-        data = _buffer->getHorizontialFrom(dev.topleft_x, dev.topleft_y + 7 - digit, !dev.reverse);
+        data = _buffer->getHorizontialFrom(dev.topleft_x, dev.topleft_y + 7 - row, dev.reverse);
       else if (dev.rotation == Rotate::Counterclockwise)
-        data = _buffer->getVerticalFrom(dev.topleft_x + 7 - digit, dev.topleft_y, dev.reverse);
+        data = _buffer->getVerticalFrom(dev.topleft_x + 7 - row, dev.topleft_y, dev.reverse);
       else /* Rotate::_0 */
-        data = _buffer->getHorizontialFrom(dev.topleft_x, dev.topleft_y + digit, dev.reverse);
+        data = _buffer->getHorizontialFrom(dev.topleft_x, dev.topleft_y + row, !dev.reverse);
 
       // 遠いデバイスから順に送る
-      size_t addr       = (dev_size - dev_i - 1) * 2;
+      size_t addr       = dev_i * 2;
       spiData[addr]     = opcode;
       spiData[addr + 1] = data;
     }

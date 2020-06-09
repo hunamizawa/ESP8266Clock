@@ -1,11 +1,11 @@
 #include "main.h"
 #include <SparkFunBME280.h>
 
-/// @brief BME280 環境計測センサ
+//! BME280 環境計測センサ
 static BME280 _bme280;
-/// @brief Ambient への送信のため、過去の環境計測結果を貯めておくキュー
+//! Ambient への送信のため、過去の環境計測結果を貯めておくキュー
 EnvDataQueue _datas(ENVDATA_STOCK_MAX);
-/// @brief 直前の環境計測結果
+//! 直前の環境計測結果
 envdata_t _last_envdata = {0};
 
 static struct tm _measure_start = {0};

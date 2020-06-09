@@ -16,7 +16,7 @@ public:
   }
 };
 
-/// @brief HTTP サーバー
+//! HTTP サーバー
 static MyWebServer _server(80);
 
 /**
