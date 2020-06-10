@@ -47,20 +47,6 @@ private:
   TGraphics graphics;
 
   /**
-   * @brief 指定範囲に描画可能な文字数を計算する
-   * 
-   * @param width 領域の幅
-   * @param cwidth 文字幅
-   * @return size_t 描画可能な文字数
-   */
-  size_t calcAvailableChars(size_t width, size_t cwidth) const {
-    for (size_t i = 1;; i++) {
-      if (i * (cwidth + 1) - 1 > width)
-        return i - 1;
-    }
-  }
-
-  /**
    * @brief 指定の文字列を描画するのに必要な領域の幅を計算する
    * 
    * @param width 文字列
@@ -68,21 +54,21 @@ private:
    * @return size_t 必要な描画領域の幅
    */
   template <uint8_t CWidth, uint8_t CHeight, class TString>
-  size_t calcRequiredWidth(TString str) {
-    
+  size_t calcRequiredWidth(TString str, ssize_t charSpace) {
+
     if (graphics.template tryGetGlyph<CWidth, CHeight>(u'.', nullptr))
-      return str.length() * (CWidth + 1) - 1;
+      return str.length() * (CWidth + charSpace) - charSpace;
 
     size_t retval = 0;
     for (size_t i = 0; i < str.length(); i++){
       auto c = str[i];
       if (c == u'.')
-        retval += 2;
+        retval += 1 + charSpace;
       else
-        retval += CWidth + 1;
+        retval += CWidth + charSpace;
     }
 
-    return retval - 1;
+    return retval - charSpace;
   }
 
 public:
@@ -185,7 +171,7 @@ public:
 
     // 文字列が width に収まるように切り詰める
     size_t real_width = width;
-    while (str.length() > 0 && (real_width = calcRequiredWidth<CWidth, CHeight>(str)) > width)
+    while (str.length() > 0 && (real_width = calcRequiredWidth<CWidth, CHeight>(str, charSpace)) > width)
       str = str.substring(1, str.length());
 
     writeString<CWidth, CHeight>(str, x + width - real_width, y, charSpace);
@@ -213,13 +199,13 @@ public:
     // 文字列が width に収まるよう、まず小数点以下を切り詰める
     for (; prec >= 0; prec--) {
       str = String(value, prec);
-      if ((real_width = calcRequiredWidth<CWidth, CHeight>(str)) <= width)
+      if ((real_width = calcRequiredWidth<CWidth, CHeight>(str, charSpace)) <= width)
         break;
     }
 
     if (prec < 0) {
       // prec == 0 でもはみ出す場合は、上位桁を切り落とす
-      while (str.length() > 0 && (real_width = calcRequiredWidth<CWidth, CHeight>(str)) > width)
+      while (str.length() > 0 && (real_width = calcRequiredWidth<CWidth, CHeight>(str, charSpace)) > width)
         str = str.substring(1, str.length());
     }
 
