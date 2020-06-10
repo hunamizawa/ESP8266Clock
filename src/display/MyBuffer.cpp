@@ -9,17 +9,6 @@ static constexpr suseconds_t HALF_OF_SEC_US = 500000; // 0.5秒
 
 static const std::array<char16_t, 7> wd = {u'日', u'月', u'火', u'水', u'木', u'金', u'土'};
 
-/**
- * @brief data が有効なデータかどうか調べる
- * 
- * @param data 調べたい envdata_t へのポインタ
- * @return true data は有効
- * @return false data は無効
- */
-static inline bool isValid(const envdata_t &data) {
-  return data.time != 0;
-}
-
 void MyBuffer::timeRow2(const struct tm &tm) {
   if (tm.tm_hour >= 10)
     this->writeInteger<4, 10>(tm.tm_hour / 10, 0, 0, 6, 4); // 時
@@ -149,7 +138,7 @@ void MyBuffer::update(const struct tm &tm, suseconds_t us, const envdata_t &envD
     /* 気圧＋時刻 */
     this->clearAll();
 
-    if (!isValid(envData)) {
+    if (!envData.isValid()) {
       this->writeString<3, 5>(u" ---.-", -1, 0);
     } else {
       this->writeReal<3, 5>(envData.pressure, 1, -1, 0, 21);
@@ -164,7 +153,7 @@ void MyBuffer::update(const struct tm &tm, suseconds_t us, const envdata_t &envD
     this->clearAll();
 
     // 温度表示
-    if (!isValid(envData)) {
+    if (!envData.isValid()) {
       this->writeString<3, 5>(u"--.-", 0, 0);
     } else if (envData.temperature < -40.0f) {
       // 低すぎ
@@ -178,7 +167,7 @@ void MyBuffer::update(const struct tm &tm, suseconds_t us, const envdata_t &envD
     this->writeString<4, 5>(u"℃", 14, 0);
 
     // 湿度表示
-    if (!isValid(envData))
+    if (!envData.isValid())
       this->writeString<3, 5>(u"--", 19, 0);
     else if (envData.humidity <= 0.0f)
       this->writeString<3, 5>(u"Lo", 19, 0);

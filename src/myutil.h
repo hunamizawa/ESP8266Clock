@@ -1,6 +1,6 @@
 /**
  * @file myutil.h
- * @brief 便利関数置き場
+ * @brief ユーティリティ関数の定義
  */
 
 #ifndef ESP8266Util_H_
@@ -11,8 +11,9 @@
 
 /**
  * @brief 二重開放防止のため、クラスのコピーを禁止する
- * see: https://cpprefjp.github.io/lang/cpp11/defaulted_and_deleted_functions.html
- *      http://yohshiy.blog.fc2.com/blog-entry-335.html
+ * 
+ * @see https://cpprefjp.github.io/lang/cpp11/defaulted_and_deleted_functions.html
+ * @see http://yohshiy.blog.fc2.com/blog-entry-335.html
  */
 #define DISALLOW_COPY(...)                   \
   __VA_ARGS__(const __VA_ARGS__ &) = delete; \
@@ -20,33 +21,32 @@
 
 /**
  * @brief ムーブコンストラクタをデフォルト定義する
- * see: https://cpprefjp.github.io/lang/cpp11/defaulted_and_deleted_functions.html
- *      http://yohshiy.blog.fc2.com/blog-entry-335.html
+ * 
+ * @see https://cpprefjp.github.io/lang/cpp11/defaulted_and_deleted_functions.html
+ * @see http://yohshiy.blog.fc2.com/blog-entry-335.html
  */
 #define ALLOW_DEFAULT_MOVE(...)          \
   __VA_ARGS__(__VA_ARGS__ &&) = default; \
   __VA_ARGS__ &operator=(__VA_ARGS__ &&) = default;
 
 #if defined(DEBUG) || defined(__PLATFORMIO_BUILD_DEBUG__)
-// Debug build では panic、Release build では警告を Serial に出して続行
+/**
+ * @brief Debug build でのみ panic する assert function
+ * 
+ * Release build では警告を Serial に出し、プログラムを続行する。
+ */
 #define assert_debug(__e) assert(__e)
 #else
-// Debug build では panic、Release build では警告を Serial に出して続行
+/**
+ * @brief Debug build でのみ panic する assert function
+ * 
+ * Release build では警告を Serial に出し、プログラムを続行する。
+ */
 #define assert_debug(__e) ((__e) ? (void)0 \
-                              : ignoredAssert(PSTR(#__e), PSTR(__FILE__), __LINE__))
+                                 : ignoredAssert(PSTR(#__e), PSTR(__FILE__), __LINE__))
 
 void ignoredAssert(PGM_P expression, PGM_P file, int line);
 #endif
-
-/**
- * @brief float を四捨五入して int にキャストする
- * 
- * @param x 
- * @return int 
- */
-static inline int round(float x) {
-  return static_cast<int>(std::round(x));
-}
 
 /**
  * @brief 小数の桁数を指定して float を文字列に変換

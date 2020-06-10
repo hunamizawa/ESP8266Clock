@@ -17,7 +17,6 @@ static struct tm _measure_start = {0};
 
 /**
  * @brief BME280 を初期化する
- * 
  */
 bool bmeInit() {
   _bme280.setI2CAddress(0x77);
@@ -29,25 +28,36 @@ bool bmeInit() {
 }
 
 /**
- * @brief 気温等を計測し、_datas に push
+ * @brief 計測開始コマンドをセンサに送る
  * 
- * @param tm 現在時刻
+ * @param tm 現在時刻（この時刻が envdata_t::time に設定される）
+ * @pre bmeInit() を少なくとも 1 回呼び出す必要がある
+ * @post 計測は非同期に行われるので、 readEnvironment() を呼ぶ前に完了待ちが必要 (9.3 ms max.)
  */
 void startMeasureEnvironment(const struct tm &tm) {
 
+  _measure_start = tm;
   // 計測開始
   _bme280.setMode(MODE_FORCED);
-
-  // 完了待ちが必要 (T_measure <= 9.3 ms)
 }
 
+/**
+ * @brief 計測結果をセンサから読み出す
+ * 
+ * @pre startMeasureEnvironment() を先に呼び出す必要がある
+ * @note 計測結果は _last_envdata および _datas に反映される
+ */
 void readEnvironment() {
+
+  if (_measure_start == (struct tm){0})
+    return;
 
   auto temperature = _bme280.readTempC();
   auto humidity    = _bme280.readFloatHumidity();
   auto pressure    = _bme280.readFloatPressure() / 100.0f;
 
-  if (pressure == 0.0f) {
+  // 通信に失敗した場合、pressure に変な値が入っていることがある
+  if (pressure == 0.0f || (temperature == 0.0f && humidity == 0.0f)) {
 
     _last_envdata = {0};
 
@@ -62,7 +72,7 @@ void readEnvironment() {
     _last_envdata = data;
 
     // 毎分 00 秒に計測したデータだけを Ambient に送る
-    if (_measure_start.tm_sec == 0)
+    if (_measure_start.tm_sec == 0 && data.isValid())
       _datas.push_back(data);
   }
 

@@ -8,13 +8,13 @@
 #include <Arduino.h>
 
 /**
- * @brief 気温計測結果を表す struct
+ * @brief 気温計測結果を表す構造体
  */
 typedef struct EnvData {
-  time_t time;
-  float  temperature;
-  float  humidity;
-  float  pressure;
+  time_t time;        //! 観測時刻
+  float  temperature; //! 気温 (℃)
+  float  humidity;    //! 湿度 (%)
+  float  pressure;    //! 気圧 (hPa)
 
   bool operator==(const struct EnvData &rhs) const {
     return time == rhs.time &&
@@ -23,8 +23,18 @@ typedef struct EnvData {
            pressure == rhs.pressure;
   }
 
-  bool operator!=(const struct EnvData &rhs) const{
+  bool operator!=(const struct EnvData &rhs) const {
     return !(*this == rhs);
+  }
+
+  /**
+   * @brief envdata_t が有効な値かどうか調べる
+   * 
+   * @return true envdata_t の値は有効
+   * @return false envdata_t の値は無効
+   */
+  bool isValid() const {
+    return time != 0;
   }
 } envdata_t;
 

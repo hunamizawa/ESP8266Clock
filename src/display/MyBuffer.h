@@ -25,11 +25,20 @@ private:
   envdata_t     _prev_envData;
   IPAddress     _prev_addr = IPAddress();
 
+  /**
+   * @brief 「時刻＋他の情報」を表示するために、時刻を 2 行目に描画する
+   * 
+   * @param tm 現在時刻
+   */
   void timeRow2(const struct tm &tm);
 
   /**
    * @brief _prev_** で始まるメンバ変数を現在の値で上書きする
    * 
+   * @param tm 現在時刻
+   * @param us 現在時刻のマイクロ秒部分
+   * @param envData 最新の環境計測結果
+   * @param addr 現在の IP アドレス
    */
   void assignPrevValues(const struct tm &tm, suseconds_t us, const envdata_t &envData, IPAddress *addr);
 
@@ -38,7 +47,7 @@ public:
       : MAX7219::Buffer<32, 16, MyGraphics>::Buffer() {}
   DISALLOW_COPY(MyBuffer);
   ALLOW_DEFAULT_MOVE(MyBuffer);
-  
+
   /**
    * @brief 画面の更新が必要か判定する
    * 
@@ -48,6 +57,7 @@ public:
    * @param addr IP アドレス
    * @return true update() を呼び出してください
    * @return false 何もしなくていい
+   * @post この関数が true を返したら、update() を呼び出すべき。
    */
   bool isRequireUpdate(const struct tm &tm, suseconds_t us, const envdata_t &envData, IPAddress *addr) const;
   /**
@@ -57,13 +67,10 @@ public:
    * @param us 現在時刻のマイクロ秒部分
    * @param envData 気温・湿度・気圧
    * @param addr IP アドレス
+   * @note MAX7219::Display::send() を呼び出すのを忘れないように。
    */
   void update(const struct tm &tm, suseconds_t us, const envdata_t &envData, IPAddress *addr);
-  /**
-   * @brief 画面を切り替える
-   * 
-   * @param pane 表示したい画面 
-   */
+
   void  setPane(const Panes pane);
   Panes getPane() const;
 
