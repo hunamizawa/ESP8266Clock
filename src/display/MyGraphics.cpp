@@ -13,7 +13,7 @@
 /**
  * @brief 文字グリフを取り出す関数
  * 
- * @tparam ArraySize 
+ * @tparam GlyphSize 
  * @param array 取り出し対象の配列
  * @param glyph_size 1文字あたりの要素数
  * @param glyphes 

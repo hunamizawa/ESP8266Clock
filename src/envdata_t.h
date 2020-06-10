@@ -30,8 +30,8 @@ typedef struct EnvData {
   /**
    * @brief envdata_t が有効な値かどうか調べる
    * 
-   * @return true envdata_t の値は有効
-   * @return false envdata_t の値は無効
+   * @retval true envdata_t の値は有効
+   * @retval false envdata_t の値は無効
    */
   bool isValid() const {
     return time != 0;

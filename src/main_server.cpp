@@ -64,8 +64,8 @@ static PGM_P getContentType_P(String filename) {
  * @brief path に対応するファイルを探し、あればレスポンスとして送る
  * 
  * @param path パス
- * @return true ファイルがあった
- * @return false Not Found
+ * @retval true ファイルがあった
+ * @retval false Not Found
  */
 static bool handleFileRead(String path) {
   if (path.endsWith("/"))

@@ -16,8 +16,9 @@ public:
  * @tparam Width 幅（ドット）
  * @tparam Height 高さ（ドット）= uint8_t[] 配列の要素数
  * @param c 取り出したい文字
- * @param retval 文字グリフを表す配列の先頭アドレス（配列は PROGMEM 定義されているかもしれない）
- * @return false 文字が見つからない
+ * @param[out] retval 受け渡し用配列の先頭アドレス
+ * @retval true 文字が見つかった
+ * @retval false 文字が見つからない
  */
   template <uint8_t Width, uint8_t Height>
   bool tryGetGlyph(char16_t c, uint8_t *retval) const;

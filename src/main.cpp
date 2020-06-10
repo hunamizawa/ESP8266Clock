@@ -150,8 +150,8 @@ void keeping() {
  * @brief target で指示された時刻になったかな？
  * 
  * @param target 
- * @return true まだ
- * @return false なった
+ * @retval true まだ
+ * @retval false なった
  */
 bool timeBefore(suseconds_t target) {
 

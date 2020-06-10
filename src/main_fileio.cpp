@@ -27,8 +27,8 @@ void readSetting() {
 /**
  * @brief 現在の設定をファイルに保存する
  * 
- * @return true 成功
- * @return false 不成功
+ * @retval true 成功
+ * @retval false 不成功
  */
 bool saveSetting() {
   File f = SPIFFS.open("/setting", "w");

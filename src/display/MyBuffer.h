@@ -55,8 +55,8 @@ public:
    * @param us 現在時刻のマイクロ秒部分
    * @param envData 気温・湿度・気圧
    * @param addr IP アドレス
-   * @return true update() を呼び出してください
-   * @return false 何もしなくていい
+   * @retval true update() を呼び出してください
+   * @retval false 何もしなくていい
    * @post この関数が true を返したら、update() を呼び出すべき。
    */
   bool isRequireUpdate(const struct tm &tm, suseconds_t us, const envdata_t &envData, IPAddress *addr) const;

@@ -56,8 +56,9 @@ void readEnvironment() {
   auto humidity    = _bme280.readFloatHumidity();
   auto pressure    = _bme280.readFloatPressure() / 100.0f;
 
-  // 通信に失敗した場合、pressure に変な値が入っていることがある
-  if (pressure == 0.0f || (temperature == 0.0f && humidity == 0.0f)) {
+  // 通信に失敗した場合、各値に変な値が入っていることがあるので
+  // Operating range 外の値があれば欠測にする
+  if (temperature < -40.0f || temperature > 85.0f || humidity < 0.0f || humidity > 100.0f || pressure < 300.0f || pressure > 1100.0f) {
 
     _last_envdata = {0};
 
