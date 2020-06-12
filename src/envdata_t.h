@@ -11,10 +11,14 @@
  * @brief 気温計測結果を表す構造体
  */
 typedef struct EnvData {
-  time_t time;        //! 観測時刻
-  float  temperature; //! 気温 (℃)
-  float  humidity;    //! 湿度 (%)
-  float  pressure;    //! 気圧 (hPa)
+  //! 観測時刻
+  time_t time;
+  //! 気温 (℃)
+  float temperature;
+  //! 湿度 (%)
+  float humidity;
+  //! 気圧 (hPa)
+  float pressure;
 
   bool operator==(const struct EnvData &rhs) const {
     return time == rhs.time &&

@@ -137,13 +137,8 @@ public:
   /**
    * @brief @e Tdata [] 配列で表されたグラフィックを指定位置に描画する
    * 
-   * @tparam Tdata 配列の型
-   * @param data グラフィックデータ（画像）を表す配列
-   * @param x 描画先の左上隅の x 座標
-   * @param y 描画先の左上隅の y 座標
-   * @param width グラフィックの有効幅
-   * @param height グラフィックの高さ = data の要素数
-   * @note @e Tdata の型は unsigned char (= uint8_t), unsigned int (= uint16_t), unsigned long (= uint32_t), unsigned long long (= uint64_t) のいずれかであるべき。
+   * @copydetails write(const std::array<Tdata, Height>&, ssize_t, ssize_t, size_t)
+   * @param height グラフィックの高さ = @c data の要素数
    */
   template <class Tdata>
   void write(const Tdata *data, ssize_t x, ssize_t y, size_t width, size_t height) {
@@ -180,7 +175,11 @@ public:
    * @param x 描画先の左上隅の x 座標
    * @param y 描画先の左上隅の y 座標
    * @param width グラフィックの有効幅
-   * @note @e Tdata の型は unsigned char (= uint8_t), unsigned int (= uint16_t), unsigned long (= uint32_t), unsigned long long (= uint64_t) のいずれかであるべき。
+   * @pre <code>width @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
+   * @pre <code>height @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
+   * @note @e Tdata の型は <code>unsigned char</code> (= <code>uint8_t</code>), <code>unsigned int</code> (= <code>uint16_t</code>),
+   *       <code>unsigned long</code> (= <code>uint32_t</code>), <code>unsigned long long</code> (= <code>uint64_t</code>) のいずれかであるべき。
+   *       それ以外の型が @e Tdata に指定された場合の動作は未定義。
    */
   template <class Tdata, size_t Height>
   void write(const std::array<Tdata, Height> &data, ssize_t x, ssize_t y, size_t width) {
@@ -190,7 +189,7 @@ public:
   /**
    * @brief 指定ドットの ON/OFF を切り替える
    * 
-   * @param is_on ON なら true
+   * @param is_on ON にするなら true
    * @param x 対象ドットの x 座標
    * @param y 対象ドットの y 座標
    */
@@ -211,6 +210,8 @@ public:
    * @param y 領域の左上隅の y 座標
    * @param width 領域の幅
    * @param height 領域の高さ
+   * @pre <code>width @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
+   * @pre <code>height @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
    */
   void clear(ssize_t x, ssize_t y, size_t width, size_t height) {
 
@@ -253,8 +254,8 @@ public:
 
   /**
    * @copydoc IBuffer::getHorizontialFrom(size_t, size_t, bool) const
-   * @pre @c x <= std::numeric_limits<ssize_t>::max()
-   * @pre @c y <= std::numeric_limits<ssize_t>::max()
+   * @pre <code>x @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
+   * @pre <code>y @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
    */
   virtual const uint8_t getHorizontialFrom(size_t x, size_t y, bool swap) const {
 
@@ -276,8 +277,8 @@ public:
 
   /**
    * @copydoc IBuffer::getVerticalFrom(size_t, size_t, bool) const
-   * @pre @c x <= std::numeric_limits<ssize_t>::max()
-   * @pre @c y <= std::numeric_limits<ssize_t>::max()
+   * @pre <code>x @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
+   * @pre <code>y @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
    */
   virtual const uint8_t getVerticalFrom(size_t x, size_t y, bool swap) const {
 

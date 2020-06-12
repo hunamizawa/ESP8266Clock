@@ -30,12 +30,13 @@ public:
   using std::bitset<N>::bitset;
 
   /**
-   * @brief bitset の範囲 [start, start + length) のビットをすべて 1 または 0 にする
-   *        （LSB = 右端が 0 番目であることに注意）
-     * 
-   * @param start 範囲の始点（start >= N の場合は assert が fail）
-   * @param length 範囲の長さ（start + length >= N の場合は切り捨てられる）
-   * @param val true なら 1 が、false なら 0 がセットされる
+   * @brief bitset の範囲 <code>[start, start + length)</code> のビットをすべて 1 または 0 にする
+   * 
+   * @param start 範囲の始点
+   * @param length 範囲の長さ
+   * @param val true なら 1 が、false なら 0 が指定の範囲にセットされる
+   * @pre <code>start @< N</code>（さもなければ assert failed）
+   * @note LSB = 右端が 0 番目であることに注意
    */
   void setRange(size_t start, size_t length, bool val = true) {
     assert(start < N);
@@ -47,11 +48,12 @@ public:
   }
 
   /**
-   * @brief bitset の範囲 [start, start + length) のビットを反転させる
-   *        （LSB = 右端が 0 番目であることに注意）
-     * 
-   * @param start 範囲の始点（start >= N の場合は assert が fail）
-   * @param length 範囲の長さ（start + length >= N の場合は切り捨てられる）
+   * @brief bitset の範囲 <code>[start, start + length)</code> のビットを反転させる
+   * 
+   * @param start 範囲の始点
+   * @param length 範囲の長さ
+   * @pre <code>start @< N</code>（さもなければ assert failed）
+   * @note LSB = 右端が 0 番目であることに注意
    */
   void flipRange(size_t start, size_t length) {
     assert(start < N);
@@ -69,12 +71,14 @@ public:
   }
 
   /**
-   * @brief bitset の範囲 [start, start + Nout) を、新しい bitset<Nout> にコピーして返す
+   * @brief bitset の範囲 <code>[start, start + Nout)</code> を、要素数 @e Nout の新しい bitset にコピーして返す
    * 
    * @tparam Nout 範囲の長さ
-   * @param start 範囲の始点（start >= N の場合は assert が fail）
-   * @return MAX7219::bitset<Nout> 
-   * @remark start + Nout > N の場合、余った部分は 0 で埋められる
+   * @param start 範囲の始点
+   * @retval MAX7219::bitset<Nout> 
+   * @pre <code>start @< N</code>（さもなければ assert failed）
+   * @pre <code>start + Nout @<= N</code>（さもなければ、余った部分は 0 で埋められる）
+   * @note LSB = 右端が 0 番目であることに注意
    */
   template <size_t Nout>
   MAX7219::bitset<Nout> range(size_t start) const {
