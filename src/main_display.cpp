@@ -38,7 +38,7 @@ void updateDisplay(const struct tm &tm, suseconds_t usec) {
  */
 void readAndSetBrightness() {
 
-  static int8_t brightness;
+  static int8_t brightness = 15;
 
   auto av = analogRead(A0);
   auto b  = _bn.update(av);

@@ -11,8 +11,6 @@
  * 
  */
 void readSetting() {
-  const size_t        capacity = JSON_OBJECT_SIZE(7) + JSON_OBJECT_SIZE(8) + 1090;
-  DynamicJsonDocument doc(capacity);
 
   File f = SPIFFS.open("/setting", "r");
   if (f) {
@@ -22,6 +20,8 @@ void readSetting() {
     // 読み込みに失敗したらデフォルト値を使う
     _setting.resetToDefault();
   }
+  
+  _bn.changeSetting(_setting.brightness);
 }
 
 /**
@@ -31,6 +31,7 @@ void readSetting() {
  * @retval false 不成功
  */
 bool saveSetting() {
+  
   File f = SPIFFS.open("/setting", "w");
   if (!f)
     return false;

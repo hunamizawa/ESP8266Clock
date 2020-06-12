@@ -218,10 +218,9 @@ void loop() {
     }
   }
 
-  // 約 80 ms ごとに測光する
-  if (brightness_count % 8 == 0)
+  // 約 40 ms ごとに測光する
+  if (++brightness_count % 4 == 0)
     readAndSetBrightness();
-  ++brightness_count;
 
   // loop() が大体 10 ms ごとに呼ばれるように調節する
   // 現在時刻をもう一度取得

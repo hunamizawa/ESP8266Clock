@@ -75,7 +75,7 @@ public:
    */
   template <class T>
   void serialize(T &retval) {
-    const size_t        capacity = JSON_ARRAY_SIZE(3) + JSON_ARRAY_SIZE(6) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(12);
+    const size_t        capacity = JSON_ARRAY_SIZE(ntp.size()) + JSON_ARRAY_SIZE(6) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(12) + 350;
     DynamicJsonDocument doc(capacity);
 
     doc["pane"]          = toString(pane);
@@ -118,14 +118,14 @@ private:
    */
 public:
   void deserialize(const String &json) {
-    const size_t        capacity = JSON_ARRAY_SIZE(3) + JSON_ARRAY_SIZE(6) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(12) + 350;
+    const size_t        capacity = JSON_ARRAY_SIZE(6) + JSON_ARRAY_SIZE(6) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(12) + 350;
     DynamicJsonDocument doc(capacity);
 
     deserializeJson(doc, json);
 
     pane = toPanes(getOrDefault(doc, "pane", toString(DEFAULT_PANE)));
     // override_pane はデシリアライズしない
-    override_pane      = DEFAULT_OVERRIDE_PANE;
+    override_pane = DEFAULT_OVERRIDE_PANE;
 
     auto brightness_j = doc["brightness"];
     if (brightness_j) {
@@ -138,13 +138,13 @@ public:
 
       brightness.manual_value = getOrDefault(brightness_j, "manual_value", DEFAULT_BRIGHTNESS_MANUAL_VALUE);
       brightness.hysteresis   = getOrDefault(brightness_j, "hysteresis", DEFAULT_BRIGHTNESS_HYSTERESIS);
-      
+
     } else {
       brightness = DEFAULT_BRIGHTNESS;
     }
 
-    tzarea             = getOrDefault(doc, "tzarea", DEFAULT_TZAREA);
-    tzcity             = getOrDefault(doc, "tzcity", DEFAULT_TZCITY);
+    tzarea = getOrDefault(doc, "tzarea", DEFAULT_TZAREA);
+    tzcity = getOrDefault(doc, "tzcity", DEFAULT_TZCITY);
 
     ntp.clear();
     auto ntp_j = doc["ntp"].as<JsonArray>();

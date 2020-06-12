@@ -291,7 +291,7 @@ void setupServer() {
 
   // /adc ―― 最新の ADC の値を返す
   _server.on("/adc", []() {
-    auto v = _bn.getRawValue();
+    auto v = _bn.calcAverageRawValue();
     _server.send(HTTP_CODE_OK, MIME_TEXT_PLAIN, String(v));
   });
 

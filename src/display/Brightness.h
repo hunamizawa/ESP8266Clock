@@ -35,8 +35,9 @@ typedef struct {
 class Brightness {
 
 private:
-  //CircularQueue<uint16_t, 8> _buffer;
-  boost::circular_buffer<uint16_t> _buffer = boost::circular_buffer<uint16_t>(64);
+  using TBufElem = int32_t;
+
+  boost::circular_buffer<TBufElem> _buffer = boost::circular_buffer<TBufElem>(64);
   brightness_setting_t             _setting;
   uint16_t                         _current = 15;
   uint16_t                         _before  = 0;
@@ -47,7 +48,10 @@ private:
    * @param v 観測値
    * @return int8_t LEDの明るさ
    */
-  int8_t calcBrightness(uint16_t v);
+  int8_t calcBrightness(TBufElem v);
+
+  bool decrasingThan(TBufElem b, TBufElem v, TBufElem th) const;
+  bool incrasingThan(TBufElem b, TBufElem v, TBufElem th) const;
 
 public:
   /**
@@ -62,9 +66,9 @@ public:
    * 
    * @param setting 
    */
-  void changeSetting(const brightness_setting_t &setting);
-  int8_t getValue();
-  uint16_t getRawValue();
+  void     changeSetting(const brightness_setting_t &setting);
+  int8_t   getValue() const;
+  uint16_t calcAverageRawValue() const;
 };
 
 #endif // Brightness_H_
