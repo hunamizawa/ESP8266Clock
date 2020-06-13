@@ -30,7 +30,6 @@ typedef struct {
 
 /**
  * @brief 光センサの観測値からLEDの明るさを算出するクラス
- * 
  */
 class Brightness {
 
@@ -50,21 +49,21 @@ private:
    */
   int8_t calcBrightness(TBufElem v);
 
-  bool decrasingThan(TBufElem b, TBufElem v, TBufElem th) const;
-  bool incrasingThan(TBufElem b, TBufElem v, TBufElem th) const;
+  bool decrasingThan(TBufElem b, TBufElem v, size_t threshold_index) const;
+  bool incrasingThan(TBufElem b, TBufElem v, size_t threshold_index) const;
 
 public:
   /**
    * @brief 観測値を更新する
    * 
    * @param v 新たな観測値
-   * @return int8_t LEDの明るさとして設定すべき値（-1 なら off）
+   * @return LED の明るさとして設定すべき値（-1 なら off）
    */
   int8_t update(uint16_t v);
   /**
    * @brief 設定を更新する
    * 
-   * @param setting 
+   * @param setting 新しい設定
    */
   void     changeSetting(const brightness_setting_t &setting);
   int8_t   getValue() const;

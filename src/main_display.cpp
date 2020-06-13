@@ -34,7 +34,6 @@ void updateDisplay(const struct tm &tm, suseconds_t usec) {
 
 /**
  * @brief 周囲の明るさを測定して、必要なら画面の明るさを変える
- * 
  */
 void readAndSetBrightness() {
 
@@ -43,9 +42,10 @@ void readAndSetBrightness() {
   auto av = analogRead(A0);
   auto b  = _bn.update(av);
 
-  if (b < 0 && _buffer.getOverridePane() == OverridePanes::NORMAL) {
+  if (b < 0) {
     // b == -1 のときは画面オフ
-    _buffer.setOverridePane(OverridePanes::OFF);
+    if (_buffer.getOverridePane() == OverridePanes::NORMAL)
+      _buffer.setOverridePane(OverridePanes::OFF);
     _display.setIntensity(0);
 
   } else if (brightness != b) {
@@ -59,7 +59,6 @@ void readAndSetBrightness() {
 
 /**
  * @brief SEL ボタンが押されていたら、画面をめくる
- * 
  */
 void changePaneIfSELPushed() {
 
@@ -103,7 +102,6 @@ void changePaneIfSELPushed() {
 
 /**
  * @brief SPI、_buffer、_display を初期化
- * 
  */
 void displayAndBufferInit() {
 
@@ -123,7 +121,8 @@ void displayAndBufferInit() {
 
 /**
  * @brief ディスプレイ更新用タイマーを開始
- * 他の画面を表示させる前に必ず stopWelcomeDisplay() を呼び出すこと
+ * 
+ * @post 他の画面を表示させる前に必ず stopWelcomeDisplay() を呼び出すこと
  */
 void startWelcomeDisplay() {
 
@@ -144,7 +143,6 @@ void startWelcomeDisplay() {
 
 /**
  * @brief ディスプレイ更新用タイマーを停止
- * 
  */
 void stopWelcomeDisplay() {
 

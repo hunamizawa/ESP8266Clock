@@ -1,42 +1,36 @@
 #include "Brightness.h"
 #include <Arduino.h>
 
-// #define DECREASING_THAN(th) (b > static_cast<int32_t>(th) - _setting.hysteresis && v <= static_cast<int32_t>(th) - _setting.hysteresis)
-// #define INCREASING_THAN(th) (b < static_cast<int32_t>(th) + _setting.hysteresis && v >= static_cast<int32_t>(th) + _setting.hysteresis)
-
-bool Brightness::decrasingThan(TBufElem b, TBufElem v, TBufElem th) const {
-  auto true_th = th - _setting.hysteresis;
+bool Brightness::decrasingThan(TBufElem b, TBufElem v, size_t threshold_index) const {
+  auto true_th = _setting.thresholds.at(threshold_index) - _setting.hysteresis;
   return b > true_th && v <= true_th;
 }
 
-bool Brightness::incrasingThan(TBufElem b, TBufElem v, TBufElem th) const {
-  auto true_th = th + _setting.hysteresis;
+bool Brightness::incrasingThan(TBufElem b, TBufElem v, size_t threshold_index) const {
+  auto true_th = _setting.thresholds.at(threshold_index) + _setting.hysteresis;
   return b < true_th && v >= true_th;
 }
 
 int8_t Brightness::calcBrightness(TBufElem v) {
   auto b = static_cast<TBufElem>(_before);
 
-  if (incrasingThan(b, v, _setting.thresholds.at(0)))
+  if (incrasingThan(b, v, 0))
     _current = -1;
-  else if (incrasingThan(b, v, _setting.thresholds.at(1)) || decrasingThan(b, v, _setting.thresholds.at(0)))
+  else if (incrasingThan(b, v, 1) || decrasingThan(b, v, 0))
     _current = 0;
-  else if (incrasingThan(b, v, _setting.thresholds.at(2)) || decrasingThan(b, v, _setting.thresholds.at(1)))
+  else if (incrasingThan(b, v, 2) || decrasingThan(b, v, 1))
     _current = 1;
-  else if (incrasingThan(b, v, _setting.thresholds.at(3)) || decrasingThan(b, v, _setting.thresholds.at(2)))
+  else if (incrasingThan(b, v, 3) || decrasingThan(b, v, 2))
     _current = 3;
-  else if (incrasingThan(b, v, _setting.thresholds.at(4)) || decrasingThan(b, v, _setting.thresholds.at(3)))
+  else if (incrasingThan(b, v, 4) || decrasingThan(b, v, 3))
     _current = 6;
-  else if (incrasingThan(b, v, _setting.thresholds.at(5)) || decrasingThan(b, v, _setting.thresholds.at(4)))
+  else if (incrasingThan(b, v, 5) || decrasingThan(b, v, 4))
     _current = 10;
-  else if (decrasingThan(b, v, _setting.thresholds.at(5)))
+  else if (decrasingThan(b, v, 5))
     _current = 15;
 
   return _current;
 }
-
-// #undef DECREASING_THAN
-// #undef INCREASING_THAN
 
 int8_t Brightness::update(uint16_t v) {
   if (_buffer.empty())
@@ -44,9 +38,10 @@ int8_t Brightness::update(uint16_t v) {
   else
     _buffer.push_back(v);
 
-  auto avg = calcAverageRawValue();
-  _before  = v;
-  return calcBrightness(avg);
+  auto avg    = calcAverageRawValue();
+  auto retval = calcBrightness(avg);
+  _before     = avg;
+  return retval;
 }
 
 void Brightness::changeSetting(const brightness_setting_t &setting) {
