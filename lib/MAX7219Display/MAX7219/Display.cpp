@@ -84,7 +84,7 @@ void Display::clearAll() const {
 
 void Display::send() const {
 
-#if defined(DEBUG) || defined(__PLATFORMIO_BUILD_DEBUG__)
+#ifdef DEBUG_MAX7219DISPLAY_BUFFER
   _buffer->printToSerial();
 #endif
 
