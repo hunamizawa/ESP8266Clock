@@ -75,7 +75,7 @@ static int httpPost(String address, const String &contentType, const String &pay
  * @brief values を Ambient に送信する形式で retval にシリアライズ
  * 
  * @param values シリアライズするデータ（10個以下推奨）
- * @param retval JSON 文字列
+ * @param[out] retval JSON 文字列
  */
 static void serializeEnvDatas(const size_t count, String *retval) {
 
@@ -86,7 +86,7 @@ static void serializeEnvDatas(const size_t count, String *retval) {
 
   auto array = doc.createNestedArray("data");
 
-  for (size_t i = 0; i < count; i++) {
+  for (size_t i = 0; i < _datas.size() && i < count; i++) {
 
     auto data = _datas.at(i);
 

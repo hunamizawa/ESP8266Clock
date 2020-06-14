@@ -19,7 +19,7 @@ class EmptyGraphics {
    * @tparam Width 文字の幅
    * @tparam Height 文字の高さ
    * @param c 文字
-   * @param retval 戻り値。長さ @e Height の uint8_t 配列が渡される
+   * @param[out] retval 戻り値。長さ @e Height の uint8_t 配列が渡される
    * @return true 文字 @c c に対応するグリフが存在する。 @c retval には有効な値が含まれる。
    * @return false 文字 @c c に対応するグリフが存在しない。 @c retval の値は未定義。
    */

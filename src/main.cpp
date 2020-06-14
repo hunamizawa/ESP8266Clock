@@ -17,6 +17,7 @@ ClockSetting _setting;
 /**
  * @brief 時刻同期を実行する
  * 
+ * @pre WiFi の接続が完了していること。
  */
 void syncTime() {
   // タイムゾーン設定を読み取り
@@ -80,7 +81,6 @@ void runEveryHours(const struct tm &tm) {
 
 /**
  * @brief リセット後1度だけ実行される関数
- * 
  */
 void setup() {
 
@@ -128,10 +128,10 @@ void setup() {
 }
 
 /**
- * @brief x [us] を 10 ms (10000 us) 単位で切り上げる
+ * @brief @c x [us] を 10 ms (10000 us) 単位で切り上げる
  * 
  * @param x マイクロ秒
- * @return suseconds_t -- x <= y && y % 10000 == 0 を満たすような最小の整数 y
+ * @return <code>x @<= y && y % 10000 == 0</code> を満たすような最小の整数 @c y
  */
 static inline suseconds_t ceiling10ms(suseconds_t x) {
   return ((x / 10000) + 1) * 10000;
@@ -139,7 +139,6 @@ static inline suseconds_t ceiling10ms(suseconds_t x) {
 
 /**
  * @brief ヒマな時に呼び出し続けないといけない関数
- * 
  */
 void keeping() {
   yieldServer();

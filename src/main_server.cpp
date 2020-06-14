@@ -106,12 +106,6 @@ static bool contains(const std::map<String, String> &map, const String &key) {
   return map.find(key) != map.end();
 }
 
-static void handleGetSetting() {
-  String json;
-  _setting.serialize(json);
-  _server.send(HTTP_CODE_OK, FPSTR(MIME_APPLICATION_JSON), json);
-}
-
 static void reboot() {
 
   if (!handleFileRead("/wait_reboot.html")) {
@@ -129,165 +123,178 @@ static void reboot() {
   delay(1000);
 }
 
+static void handleGetEnvdata() {
+
+  // 方針: DynamicJsonDocument (ArduinoJson) で一気にシリアライズするとメモリ不足になるので
+  // 　　  1要素ずつ DynamicJsonDocument でシリアライズし、chunk transfer で少しずつ送信する
+
+  String                  json;
+  static constexpr size_t capacity = JSON_OBJECT_SIZE(5);
+  DynamicJsonDocument     doc(capacity);
+
+  // Enable chunk transfer
+  _server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+
+  if (_setting.ambient_writekey && _setting.ambient_writekey.length() > 0) {
+
+    // server は、空の文字列 ("") をレスポンスの終端とみなすので、
+    // _setting.ambient_writekey == "" の場合に
+    // _server.sendContent(_setting.ambient_writekey) を実行すると
+    // そこでリクエストのペイロードが途切れてしまう。
+    // よって _setting.ambient_writekey == "" かどうかで場合分けが必要。
+
+    _server.send_P(HTTP_CODE_OK, MIME_APPLICATION_JSON, PSTR("{\"writeKey\":\""));
+    _server.sendContent(_setting.ambient_writekey);
+    _server.sendContent_P(PSTR("\",\"data\":["));
+
+  } else {
+
+    _server.send_P(HTTP_CODE_OK, MIME_APPLICATION_JSON, PSTR("{\"writeKey\":\"\",\"data\":["));
+  }
+
+  auto need_comma = false;
+
+  for (envdata_t data : _datas) {
+
+    if (need_comma)
+      _server.sendContent_P(PSTR(","));
+
+    doc["created"] = data.time;
+    doc["time"]    = 1;
+    doc["d1"]      = ftostrf(data.temperature, 2);
+    doc["d2"]      = ftostrf(data.humidity, 1);
+    doc["d3"]      = ftostrf(data.pressure, 2);
+
+    serializeJson(doc, json);
+    _server.sendContent(json);
+    doc.clear();
+
+    need_comma = true;
+  }
+
+  _server.sendContent_P(PSTR("]}"));
+  // End of response
+  _server.sendContent("");
+}
+
+static void handleGetSetting() {
+  String json;
+  _setting.serialize(json);
+  _server.send(HTTP_CODE_OK, FPSTR(MIME_APPLICATION_JSON), json);
+}
+
+static void handlePostSetting() {
+
+  auto dic = std::map<String, String>();
+  argsAsMap(_server, &dic);
+
+  for (auto &&i : dic) {
+    Serial.printf("key=%s value=%s\n", i.first.c_str(), i.second.c_str());
+  }
+
+  if (contains(dic, "override_pane")) {
+    auto pane              = toOverridePanes(dic.at("override_pane"));
+    _setting.override_pane = pane;
+    _buffer.setOverridePane(pane);
+    _display.testMode(pane == OverridePanes::TEST);
+
+  } else if (contains(dic, "pane")) {
+    auto pane = toPanes(dic.at("pane"));
+    if (!isValidExternalUse(pane)) {
+      _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Invalid argument 'pane'"));
+      return;
+    }
+    _setting.pane = pane;
+    _buffer.setPane(pane);
+
+  } else if (contains(dic, "tzarea") || contains(dic, "tzcity")) {
+
+    if (!contains(dic, "tzarea")) {
+      _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Please provide required argument 'tzarea'"));
+      return;
+    }
+    if (!contains(dic, "tzcity")) {
+      _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Please provide required argument 'tzcity'"));
+      return;
+    }
+
+    auto tzarea = dic.at("tzarea");
+    auto tzcity = dic.at("tzcity");
+
+    _setting.tzarea = tzarea;
+    _setting.tzcity = tzcity;
+
+    if (!saveSetting()) {
+      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      return;
+    }
+
+    reboot();
+    return;
+
+  } else if (contains(dic, "ntp1")) {
+
+    std::vector<String> new_ntp;
+
+    for (size_t i = 1; i <= 3; i++) {
+      auto key = "ntp" + String(i);
+      if (!contains(dic, key))
+        continue;
+
+      auto addr = dic.at(key);
+      if (!addr || addr.isEmpty()) {
+        if (i == 1) {
+          // ntp1 のみ必須パラメータ
+          _server.send(HTTP_CODE_BAD_REQUEST, FPSTR(MIME_TEXT_PLAIN), "Parameter 'ntp" + String(i) + "' is invalid");
+          return;
+        }
+        continue;
+      }
+
+      // FQDN にドットが 1 つもないのはおかしい
+      if (addr.indexOf('.') < 0) {
+        _server.send(HTTP_CODE_BAD_REQUEST, FPSTR(MIME_TEXT_PLAIN), "Parameter 'ntp" + String(i) + "' is invalid");
+        return;
+      }
+
+      new_ntp.push_back(addr);
+    }
+
+    if (new_ntp.size() == 0) {
+      _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("All 'ntp*' parameter are empty"));
+      return;
+    }
+
+    _setting.ntp.assign(new_ntp.cbegin(), new_ntp.cend());
+
+    if (!saveSetting()) {
+      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      return;
+    }
+
+    reboot();
+    return;
+
+  } else {
+    _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Unknown or empty params"));
+    return;
+  }
+
+  // 変更後の設定をJSONで返す
+  handleGetSetting();
+}
+
 /**
  * @brief HTTP サーバーを初期化する
  * 
  */
 void setupServer() {
 
-  _server.on("/envdata", HTTP_GET, []() {
-    // 方針: DynamicJsonDocument (ArduinoJson) で一気にシリアライズするとメモリ不足になるので
-    // 　　  1要素ずつ DynamicJsonDocument でシリアライズし、chunk transfer で少しずつ送信する
-
-    String              json;
-    size_t              capacity = JSON_OBJECT_SIZE(5);
-    DynamicJsonDocument doc(capacity);
-
-    // Enable chunk transfer
-    _server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-
-    if (_setting.ambient_writekey && _setting.ambient_writekey.length() > 0) {
-
-      // server は、空の文字列 ("") をレスポンスの終端とみなすので、
-      // _setting.ambient_writekey == "" の場合に
-      // _server.sendContent(_setting.ambient_writekey) を実行すると
-      // そこでリクエストのペイロードが途切れてしまう。
-      // よって _setting.ambient_writekey == "" かどうかで場合分けが必要。
-
-      _server.send_P(HTTP_CODE_OK, MIME_APPLICATION_JSON, PSTR("{\"writeKey\":\""));
-      _server.sendContent(_setting.ambient_writekey);
-      _server.sendContent_P(PSTR("\",\"data\":["));
-
-    } else {
-
-      _server.send_P(HTTP_CODE_OK, MIME_APPLICATION_JSON, PSTR("{\"writeKey\":\"\",\"data\":["));
-    }
-
-    auto need_comma = false;
-
-    for (envdata_t data : _datas) {
-
-      if (need_comma)
-        _server.sendContent_P(PSTR(","));
-
-      doc["created"] = data.time;
-      doc["time"]    = 1;
-      doc["d1"]      = ftostrf(data.temperature, 2);
-      doc["d2"]      = ftostrf(data.humidity, 1);
-      doc["d3"]      = ftostrf(data.pressure, 2);
-
-      serializeJson(doc, json);
-      _server.sendContent(json);
-
-      need_comma = true;
-    }
-
-    _server.sendContent_P(PSTR("]}"));
-    // End of response
-    _server.sendContent("");
-  });
+  _server.on("/envdata", HTTP_GET, handleGetEnvdata);
 
   _server.on("/setting", HTTP_GET, handleGetSetting);
 
-  _server.on("/setting", HTTP_POST, []() {
-    auto dic = std::map<String, String>();
-    argsAsMap(_server, &dic);
-
-    for (auto &&i : dic) {
-      Serial.printf("key=%s value=%s\n", i.first.c_str(), i.second.c_str());
-    }
-
-    if (contains(dic, "override_pane")) {
-      auto pane              = toOverridePanes(dic.at("override_pane"));
-      _setting.override_pane = pane;
-      _buffer.setOverridePane(pane);
-      _display.testMode(pane == OverridePanes::TEST);
-
-    } else if (contains(dic, "pane")) {
-      auto pane = toPanes(dic.at("pane"));
-      if (!isValidExternalUse(pane)) {
-        _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Invalid argument 'pane'"));
-        return;
-      }
-      _setting.pane = pane;
-      _buffer.setPane(pane);
-
-    } else if (contains(dic, "tzarea") || contains(dic, "tzcity")) {
-      
-      if (!contains(dic, "tzarea")) {
-        _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Please provide required argument 'tzarea'"));
-        return;
-      }
-      if (!contains(dic, "tzcity")) {
-        _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Please provide required argument 'tzcity'"));
-        return;
-      }
-
-      auto tzarea = dic.at("tzarea");
-      auto tzcity = dic.at("tzcity");
-
-      _setting.tzarea = tzarea;
-      _setting.tzcity = tzcity;
-
-      if (!saveSetting()) {
-        _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
-        return;
-      }
-
-      reboot();
-      return;
-
-    } else if (contains(dic, "ntp1")) {
-
-      std::vector<String> new_ntp;
-
-      for (size_t i = 1; i <= 3; i++) {
-        auto key = "ntp" + String(i);
-        if (!contains(dic, key))
-          continue;
-
-        auto addr = dic.at(key);
-        if (!addr || addr.isEmpty()) {
-          if (i == 1) {
-            // ntp1 のみ必須パラメータ
-            _server.send(HTTP_CODE_BAD_REQUEST, FPSTR(MIME_TEXT_PLAIN), "Parameter 'ntp" + String(i) + "' is invalid");
-            return;
-          }
-          continue;
-        }
-
-        // FQDN にドットが 1 つもないのはおかしい
-        if (addr.indexOf('.') < 0) {
-          _server.send(HTTP_CODE_BAD_REQUEST, FPSTR(MIME_TEXT_PLAIN), "Parameter 'ntp" + String(i) + "' is invalid");
-          return;
-        }
-
-        new_ntp.push_back(addr);
-      }
-
-      if (new_ntp.size() == 0) {
-        _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("All 'ntp*' parameter are empty"));
-        return;
-      }
-
-      _setting.ntp.assign(new_ntp.cbegin(), new_ntp.cend());
-
-      if (!saveSetting()) {
-        _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
-        return;
-      }
-
-      reboot();
-      return;
-
-    } else {
-      _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Unknown or empty params"));
-      return;
-    }
-
-    // 変更後の設定をJSONで返す
-    handleGetSetting();
-  });
+  _server.on("/setting", HTTP_POST, handlePostSetting);
 
   // /adc ―― 最新の ADC の値を返す
   _server.on("/adc", []() {

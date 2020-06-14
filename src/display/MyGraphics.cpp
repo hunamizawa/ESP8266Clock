@@ -13,13 +13,13 @@
 /**
  * @brief 文字グリフを取り出す関数
  * 
- * @tparam GlyphSize 
+ * @tparam GlyphSize 1文字あたりの要素数
  * @param array 取り出し対象の配列
- * @param glyph_size 1文字あたりの要素数
  * @param glyphes 
  * @param c 取り出したい文字
- * @return const uint8_t* 当該文字の開始アドレス
- * @return nullptr 見つからない
+ * @param[out] retval 受け渡し用配列の先頭アドレス
+ * @retval true 文字が見つかった
+ * @retval false 文字が見つからない
  */
 template <size_t GlyphSize>
 static bool tryGetGlyphPtr(const uint8_t *array, const std::vector<char16_t> &glyphes, char16_t c, uint8_t *retval) {

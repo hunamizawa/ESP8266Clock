@@ -8,7 +8,6 @@
 
 /**
  * @brief 設定ファイルから設定を読み込む
- * 
  */
 void readSetting() {
 
