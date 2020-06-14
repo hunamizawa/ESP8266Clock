@@ -8,6 +8,7 @@
 #include "main.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
 #include <map>
@@ -23,6 +24,8 @@ public:
 
 //! HTTP サーバー
 static MyWebServer _server(80);
+//! OTA Update
+static ESP8266HTTPUpdateServer _updater;
 
 /**
  * @brief 拡張子から MIME タイプを取得
@@ -289,6 +292,8 @@ static void handlePostSetting() {
  * 
  */
 void setupServer() {
+
+  _updater.setup(&_server);
 
   _server.on("/envdata", HTTP_GET, handleGetEnvdata);
 
