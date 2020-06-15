@@ -55,17 +55,29 @@ static inline size_t copyArray(ARDUINOJSON_NAMESPACE::ArrayConstRef src, std::ar
 class ClockSetting {
   // struct のように使ってほしいのでメンバ変数は全部 public
 public:
+  //! 現在表示中の画面を表す Panes
   Panes                pane;
+  //! 現在の割り込み画面モードを表す OverridePanes
   OverridePanes        override_pane;
+  //! LED の明るさを制御するための設定値
   brightness_setting_t brightness;
+  //! タイムゾーン
   String               tzarea;
+  //! タイムゾーン
   String               tzcity;
+  //! 使用する NTP サーバーの配列
   std::vector<String>  ntp;
+  //! 気圧計設置地点の標高（海面更正に使う）
   uint16_t             elev;
+  //! true なら観測データを Ambient に送信する
   bool                 use_ambient;
+  //! Ambient のチャネル ID
   unsigned int         ambient_channelid;
+  //! Ambient のライトキー
   String               ambient_writekey;
+  //! true なら観測データを @c custom_server_addr 宛に HTTP POST する
   bool                 use_custom_server;
+  //! 観測データの送り先
   String               custom_server_addr;
 
   /**
@@ -165,6 +177,9 @@ public:
     custom_server_addr = getOrDefault(doc, "custom_server_addr", DEFAULT_CUSTOM_SERVER_ADDR);
   }
 
+  /**
+   * @brief 設定を全てリセットして初期値に戻す
+   */
   void resetToDefault() {
     pane               = DEFAULT_PANE;
     override_pane      = DEFAULT_OVERRIDE_PANE;

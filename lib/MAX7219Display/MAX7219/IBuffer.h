@@ -21,6 +21,7 @@ public:
    * 
    * @param x 始点の x 座標
    * @param y 始点の y 座標
+   * @param swap 戻り値を反転（MSB と LSB を入れ替え）するかどうか
    * @return 8 ビット分のグラフィックを表す値
    */
   virtual const uint8_t getHorizontialFrom(size_t x, size_t y, bool swap) const = 0;
@@ -30,6 +31,7 @@ public:
    * 
    * @param x 始点の x 座標
    * @param y 始点の y 座標
+   * @param swap 戻り値を反転（MSB と LSB を入れ替え）するかどうか
    * @return 8 ビット分のグラフィックを表す値
    */
   virtual const uint8_t getVerticalFrom(size_t x, size_t y, bool swap) const = 0;

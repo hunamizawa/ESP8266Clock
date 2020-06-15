@@ -46,15 +46,13 @@ public:
   /**
    * @brief TEST MODE（全ドット点灯）の入切
    * 
-   * @param value true テストモード
-   * @param value false 通常モード
+   * @param value true = テストモード、false = 通常モード
    */
   void testMode(bool value) const;
   /**
    * @brief SHUTDOWN MODE（全ドット消灯）の入切
    * 
-   * @param value true シャットダウン
-   * @param value false 復帰
+   * @param value true = シャットダウン、false = 復帰
    */
   void shutdownMode(bool value) const;
   /**

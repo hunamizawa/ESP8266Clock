@@ -23,13 +23,16 @@ void throw_exception(E const &e) {
 #include <boost/circular_buffer.hpp>
 
 typedef struct {
+  //! 手動で設定された明るさ
   int8_t                  manual_value;
+  //! LED の明るさを切り替えるしきい値
   std::array<uint16_t, 6> thresholds;
+  //! 明るさのバタつきを防ぐヒステリシス
   uint16_t                hysteresis;
 } brightness_setting_t;
 
 /**
- * @brief 光センサの観測値からLEDの明るさを算出するクラス
+ * @brief 光センサの観測値から LED の明るさを算出するクラス
  */
 class Brightness {
 
@@ -42,7 +45,7 @@ private:
   uint16_t                         _before  = 0;
 
   /**
-   * @brief 生の観測値からLEDの明るさを計算
+   * @brief 生の観測値から LED の明るさを計算
    * 
    * @param v 観測値
    * @return int8_t LEDの明るさ
@@ -63,10 +66,20 @@ public:
   /**
    * @brief 設定を更新する
    * 
-   * @param setting 新しい設定
+   * @param setting 新しい設定値
    */
-  void     changeSetting(const brightness_setting_t &setting);
-  int8_t   getValue() const;
+  void changeSetting(const brightness_setting_t &setting);
+  /**
+   * @brief LED の明るさとして設定すべき値を取得する
+   * 
+   * @return LED の明るさとして設定すべき値（-1 なら off）
+   */
+  int8_t getValue() const;
+  /**
+   * @brief 生の観測値の平均を計算
+   * 
+   * @return 生の観測値の平均
+   */
   uint16_t calcAverageRawValue() const;
 };
 
