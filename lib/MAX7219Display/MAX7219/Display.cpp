@@ -1,4 +1,5 @@
 #include "Display.h"
+#include <assert.h>
 #include <SPI.h>
 using namespace MAX7219;
 
@@ -75,6 +76,24 @@ void Display::shutdownMode(bool value) const {
 
 void Display::setIntensity(uint8_t intensity) const {
   broadcast(OP_INTENSITY, intensity);
+}
+
+void Display::setIntensity(std::vector<uint8_t> intensities) const {
+
+  assert(intensities.size() == _devices.size());
+
+  size_t  size = _devices.size() * 2;
+  uint8_t spiData[size];
+
+  for (size_t i = 0; i < _devices.size(); i++) {
+    size_t addr       = i * 2;
+    spiData[addr]     = OP_INTENSITY;
+    spiData[addr + 1] = intensities.at(i);
+  }
+
+  CS_LOW();
+  SPI.transferBytes(spiData, spiData, size * sizeof(uint8_t));
+  CS_HIGH();
 }
 
 void Display::clearAll() const {

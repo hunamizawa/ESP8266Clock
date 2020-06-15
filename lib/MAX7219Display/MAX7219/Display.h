@@ -36,6 +36,7 @@ public:
    * @param buffer グラフィックを保持している Buffer オブジェクト
    * @param pin_cs SPI CS ピン番号
    * @param devices デイジーチェーン接続された MAX7219 モジュールの相対位置や順序の設定
+   * @note @c devices の順序は、マスター (ESP8266) から見て遠い順に書く。
    */
   Display(const int pin_cs, const IBuffer &buffer, const std::vector<setting_t> &devices);
   /**
@@ -60,8 +61,16 @@ public:
    * @brief 明るさを設定
    * 
    * @param intensity 明るさ（0 から 15 まで）
+   * @note 全てのデバイスに同じ値が設定される。
    */
   void setIntensity(uint8_t intensity) const;
+  /**
+   * @brief 明るさを設定
+   * 
+   * @param intensities デバイスごとの明るさ（0 から 15 まで）
+   * @pre @c intensities の要素数は、コンストラクタ Display::Display() の引数 @c devices の要素数と一致しなければならない。
+   */
+  void setIntensity(std::vector<uint8_t> intensities) const;
   /**
    * @brief 全ドットクリア（IBuffer の内容は変化しない）
    */
