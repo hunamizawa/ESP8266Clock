@@ -48,3 +48,6 @@ my_config.ini
 
 # Doxygen generated doc
 /doc
+
+# Auto-generated file on build
+resource.cpp

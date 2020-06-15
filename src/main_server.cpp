@@ -6,11 +6,13 @@
 #include "TZDB.h"
 #include "const.h"
 #include "main.h"
+#include "resource.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
+#include <array>
 #include <map>
 
 class MyWebServer : public ESP8266WebServer {
@@ -26,6 +28,8 @@ public:
 static MyWebServer _server(80);
 //! OTA Update
 static ESP8266HTTPUpdateServer _updater;
+
+static constexpr char IF_NONE_MATCH[] = "If-None-Match";
 
 /**
  * @brief 拡張子から MIME タイプを取得
@@ -70,11 +74,40 @@ static PGM_P getContentType_P(String filename) {
  * @retval true ファイルがあった
  * @retval false Not Found
  */
-static bool handleFileRead(String path) {
+static bool handleFileRead(String path, HTTPMethod method, const String &if_none_match) {
+
+  if (method != HTTP_GET && method != HTTP_HEAD) {
+    _server.send_P(HTTP_CODE_METHOD_NOT_ALLOWED, MIME_TEXT_PLAIN, PSTR("Method Not Allowed"));
+    return true;
+  }
+
   if (path.endsWith("/"))
     path += "index.html";
 
-  auto contentType = FPSTR(getContentType_P(path));
+  auto contentType = getContentType_P(path);
+
+  auto resource = Resource::searchByPath(path);
+  if (resource.pointer) {
+
+    // If-None-Match ヘッダが一致する場合は 304 Not Modified を返す
+    auto etag = FPSTR(resource.etag);
+    if (if_none_match == etag) {
+      _server.send(HTTP_CODE_NOT_MODIFIED, contentType, "");
+      return true;
+    }
+
+    _server.sendHeader("ETag", etag);
+    if (method == HTTP_GET) {
+      _server.send_P(HTTP_CODE_OK, contentType, resource.pointer, resource.length);
+    } else { // HTTP_HEAD
+      // XXX: Content-Length が2重になる
+      _server.sendHeader("Content-Length", String(resource.length));
+      _server.send(HTTP_CODE_OK, contentType, "");
+    }
+
+    return true;
+  }
+
   if (!SPIFFS.exists(path))
     return false;
 
@@ -82,7 +115,7 @@ static bool handleFileRead(String path) {
   if (!file)
     return false;
 
-  _server.streamFile(file, contentType);
+  _server.streamFile(file, FPSTR(contentType));
   file.close();
 
   return true;
@@ -111,8 +144,8 @@ static bool contains(const std::map<String, String> &map, const String &key) {
 
 static void reboot() {
 
-  if (!handleFileRead("/wait_reboot.html")) {
-    _server.send(HTTP_CODE_OK, FPSTR(MIME_TEXT_PLAIN), "Rebooting...");
+  if (!handleFileRead("/wait_reboot.html", HTTP_GET, "")) {
+    _server.send_P(HTTP_CODE_OK, MIME_TEXT_PLAIN, PSTR("Rebooting..."));
   }
 
   while (_server.getStatus() != HC_NONE) {
@@ -128,15 +161,26 @@ static void reboot() {
 
 static void handleGetEnvdata() {
 
+  auto method = _server.method();
+  if (method != HTTP_GET && method != HTTP_HEAD) {
+    _server.send_P(HTTP_CODE_METHOD_NOT_ALLOWED, MIME_TEXT_PLAIN, PSTR("Method Not Allowed"));
+    return;
+  }
+
   // 方針: DynamicJsonDocument (ArduinoJson) で一気にシリアライズするとメモリ不足になるので
   // 　　  1要素ずつ DynamicJsonDocument でシリアライズし、chunk transfer で少しずつ送信する
+
+  // Enable chunk transfer
+  _server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+
+  if (method == HTTP_HEAD) {
+    _server.send(HTTP_CODE_OK, MIME_TEXT_PLAIN, "");
+    return;
+  }
 
   String                  json;
   static constexpr size_t capacity = JSON_OBJECT_SIZE(5);
   DynamicJsonDocument     doc(capacity);
-
-  // Enable chunk transfer
-  _server.setContentLength(CONTENT_LENGTH_UNKNOWN);
 
   if (_setting.ambient_writekey && _setting.ambient_writekey.length() > 0) {
 
@@ -189,6 +233,10 @@ static void handleGetSetting() {
   _server.send(HTTP_CODE_OK, FPSTR(MIME_APPLICATION_JSON), json);
 }
 
+static inline void badRequest_P(PGM_P message) {
+  _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, message);
+}
+
 static void handlePostSetting() {
 
   auto dic = std::map<String, String>();
@@ -207,7 +255,7 @@ static void handlePostSetting() {
   } else if (contains(dic, "pane")) {
     auto pane = toPanes(dic.at("pane"));
     if (!isValidExternalUse(pane)) {
-      _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Invalid argument 'pane'"));
+      badRequest_P(PSTR("Invalid argument 'pane'"));
       return;
     }
     _setting.pane = pane;
@@ -216,11 +264,11 @@ static void handlePostSetting() {
   } else if (contains(dic, "tzarea") || contains(dic, "tzcity")) {
 
     if (!contains(dic, "tzarea")) {
-      _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Please provide required argument 'tzarea'"));
+      badRequest_P(PSTR("Please provide required argument 'tzarea'"));
       return;
     }
     if (!contains(dic, "tzcity")) {
-      _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Please provide required argument 'tzcity'"));
+      badRequest_P(PSTR("Please provide required argument 'tzcity'"));
       return;
     }
 
@@ -257,6 +305,7 @@ static void handlePostSetting() {
         continue;
       }
 
+      // 引数の簡易チェック
       // FQDN にドットが 1 つもないのはおかしい
       if (addr.indexOf('.') < 0) {
         _server.send(HTTP_CODE_BAD_REQUEST, FPSTR(MIME_TEXT_PLAIN), "Parameter 'ntp" + String(i) + "' is invalid");
@@ -267,7 +316,7 @@ static void handlePostSetting() {
     }
 
     if (new_ntp.size() == 0) {
-      _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("All 'ntp*' parameter are empty"));
+      badRequest_P(PSTR("All 'ntp*' parameter are empty"));
       return;
     }
 
@@ -282,7 +331,7 @@ static void handlePostSetting() {
     return;
 
   } else {
-    _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Unknown or empty params"));
+    badRequest_P(PSTR("Unknown or empty params"));
     return;
   }
 
@@ -297,7 +346,7 @@ void setupServer() {
 
   _updater.setup(&_server);
 
-  _server.on("/envdata", HTTP_GET, handleGetEnvdata);
+  _server.on("/envdata", handleGetEnvdata);
 
   _server.on("/setting", HTTP_GET, handleGetSetting);
 
@@ -311,10 +360,15 @@ void setupServer() {
 
   // パスに対するハンドラが定義されていない場合、SPIFFS にあるファイルを返そうとしてみる
   _server.onNotFound([]() {
-    if (handleFileRead(_server.uri()))
+    if (handleFileRead(_server.uri(), _server.method(), _server.header(IF_NONE_MATCH)))
       return;
+
     _server.send_P(HTTP_CODE_NOT_FOUND, MIME_TEXT_PLAIN, PSTR("File Not Found"));
   });
+
+  // If-None-Match ヘッダを取得する
+  std::array<const char *, 1> collect_headers = {IF_NONE_MATCH};
+  _server.collectHeaders(collect_headers.data(), collect_headers.size());
 
   // Start listen
   _server.begin();

@@ -27,16 +27,16 @@ public:
 namespace ConstGraphics {
 
 //! 「ESP8266Clock」
-extern const std::array<uint32_t, 16> welcome;
+extern const std::array<uint32_t, 16> welcome PROGMEM;
 
 //! 「同期中」
-extern const std::array<uint32_t, 8> douki_chu;
+extern const std::array<uint32_t, 8> douki_chu PROGMEM;
 
 //! 「設定して下さい」
-extern const std::array<uint32_t, 16> plz_setting;
+extern const std::array<uint32_t, 16> plz_setting PROGMEM;
 
 //! 「Wi-Fi 接続不可」
-extern const std::array<uint32_t, 16> con_fail;
+extern const std::array<uint32_t, 16> con_fail PROGMEM;
 
 } // namespace ConstGraphics
 
