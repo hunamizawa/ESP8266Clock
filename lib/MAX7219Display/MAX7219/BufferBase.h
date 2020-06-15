@@ -24,40 +24,40 @@ namespace MAX7219 {
  * @par 内部実装
  * @parblock
  * MAX7219::BufferBase は、%MAX7219 LED モジュール用のフレームバッファです。
- * LED モジュールに表示させるグラフィックを、std::array<std::bitset<BufferWidth>, BufferHeight> の形で内部で保持しています。
+ * LED モジュールに表示させるグラフィックを、std::bitset の配列として内部で保持しています。
  * 
  * 例えば MAX7219::BufferBase<24, 16> の場合、
  * 内部配列 @c _buffer は、マトリックス LED に対して次のようにマッピングされます。
  * 
  * @verbatim
- *        x: 0 1 ...     7 8 9 ...    15 16 17 ...  23
- *          ┌─────────────┬─────────────┬─────────────┐
- *          │[23](MSB)                        [0](LSB)│
- *  0     0 │               _buffer[ 0]               │
- *        1 │               _buffer[ 1]               │
- *      ... │                   ...                   │
- *        7 │               _buffer[ 7]               │
- *          ├─────────────┼─────────────┼─────────────┤
- *  1     8 │               _buffer[ 8]               │
- *        9 │               _buffer[ 9]               │
- *      ... │                   ...                   │
- *       15 │               _buffer[15]               │
- *  ↑     ↑ └─────────────┴─────────────┴─────────────┘
- *  |     └ y
- *  └ device_y
+          x: 0 1 ...     7 8 9 ...    15 16 17 ...  23
+            ┌-------------┬-------------┬-------------┐
+            │[23](MSB)                        [0](LSB)│
+    0     0 │               _buffer[ 0]               │
+          1 │               _buffer[ 1]               │
+        ... │                   ...                   │
+          7 │               _buffer[ 7]               │
+            ├-------------┼-------------┼-------------┤
+    1     8 │               _buffer[ 8]               │
+          9 │               _buffer[ 9]               │
+        ... │                   ...                   │
+         15 │               _buffer[15]               │
+    ↑     ↑ └-------------┴-------------┴-------------┘
+    |     └ y
+    └ device_y
  * @endverbatim
  * 
  * ※bitset の 0 番目の要素は右端に来ることに注意して下さい。
  * 
  * すなわち、座標 (x, y) の ON/OFF は、
- * <tt>_buffer[y][BufferWidth - x - 1]</tt> にアクセスすることで取得・設定できます。
+ * <code>_buffer[y][BufferWidth - x - 1]</code> にアクセスすることで取得・設定できます。
  * 例えば上図において (3, 5) を ON にするなら
  * @code
  *   _buffer[5][24 - 3 - 1] = true;
  * @endcode
  * とします。
  * 
- * @c _buffer に加えた変更は、Display::send() を呼び出すことにより
+ * @c _buffer に加えた変更は、MAX7219::Display::send() を呼び出すことにより
  * SPI 経由で %MAX7219 に送られ、LED モジュールの表示が更新されます。
  * @endparblock
  */
@@ -175,8 +175,8 @@ public:
    * @param x 描画先の左上隅の x 座標
    * @param y 描画先の左上隅の y 座標
    * @param width グラフィックの有効幅
-   * @pre <code>width @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
-   * @pre <code>height @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert failed）
+   * @pre <code>width @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert 失敗）
+   * @pre <code>height @<= std::numeric_limits<ssize_t>::max()</code>（さもなければ assert 失敗）
    * @note @e Tdata の型は <code>unsigned char</code> (= <code>uint8_t</code>), <code>unsigned int</code> (= <code>uint16_t</code>),
    *       <code>unsigned long</code> (= <code>uint32_t</code>), <code>unsigned long long</code> (= <code>uint64_t</code>) のいずれかであるべき。
    *       それ以外の型が @e Tdata に指定された場合の動作は未定義。

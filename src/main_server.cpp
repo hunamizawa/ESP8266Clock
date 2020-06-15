@@ -159,6 +159,9 @@ static void handleGetEnvdata() {
 
   for (envdata_t data : _datas) {
 
+    // serializeJson は Append 動作なので、変数 json を for　の外に出してはいけない
+    String json;
+
     if (need_comma)
       _server.sendContent_P(PSTR(","));
 
@@ -289,7 +292,6 @@ static void handlePostSetting() {
 
 /**
  * @brief HTTP サーバーを初期化する
- * 
  */
 void setupServer() {
 
