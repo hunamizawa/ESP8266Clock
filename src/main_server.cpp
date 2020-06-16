@@ -100,8 +100,7 @@ static bool handleFileRead(String path, HTTPMethod method, const String &if_none
     if (method == HTTP_GET) {
       _server.send_P(HTTP_CODE_OK, contentType, resource.pointer, resource.length);
     } else { // HTTP_HEAD
-      // XXX: Content-Length が2重になる
-      _server.sendHeader("Content-Length", String(resource.length));
+      _server.setContentLength(resource.length);
       _server.send(HTTP_CODE_OK, contentType, "");
     }
 
@@ -115,7 +114,7 @@ static bool handleFileRead(String path, HTTPMethod method, const String &if_none
   if (!file)
     return false;
 
-  _server.streamFile(file, FPSTR(contentType));
+  _server.streamFile(file, FPSTR(contentType), method);
   file.close();
 
   return true;
