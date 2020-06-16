@@ -329,6 +329,15 @@ static void handlePostSetting() {
     reboot();
     return;
 
+  } else if (contains(dic, "elev")) {
+
+    auto elev = static_cast<float>(atof(dic.at("elev").c_str()));
+    _setting.elev = elev;
+
+    if (!saveSetting()) {
+      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+    }
+
   } else {
     badRequest_P(PSTR("Unknown or empty params"));
     return;
