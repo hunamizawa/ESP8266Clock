@@ -41,6 +41,13 @@ void startMeasureEnvironment(const struct tm &tm) {
   _bme280.setMode(MODE_FORCED);
 }
 
+static inline float calcSeaLevelPressure(float station_pres, float temp, float elev) {
+  if (elev == 0.f)
+    return station_pres;
+  auto x = 0.0065f * elev;
+  return station_pres * std::pow(1.f - x / (temp + x + 273.15f), -5.257f);
+}
+
 /**
  * @brief 計測結果をセンサから読み出す
  * 
@@ -68,7 +75,7 @@ void readEnvironment() {
         mktime(&_measure_start),
         temperature,
         humidity,
-        pressure,
+        calcSeaLevelPressure(pressure, temperature, _setting.elev),
     };
     _last_envdata = data;
 
