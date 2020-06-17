@@ -177,25 +177,12 @@ static void handleGetEnvdata() {
     return;
   }
 
-  static constexpr size_t capacity = JSON_OBJECT_SIZE(5);
+  static constexpr size_t capacity = JSON_OBJECT_SIZE(5) + 43;
   DynamicJsonDocument     doc(capacity);
 
-  if (_setting.ambient_writekey && _setting.ambient_writekey.length() > 0) {
-
-    // server は、空の文字列 ("") をレスポンスの終端とみなすので、
-    // _setting.ambient_writekey == "" の場合に
-    // _server.sendContent(_setting.ambient_writekey) を実行すると
-    // そこでリクエストのペイロードが途切れてしまう。
-    // よって _setting.ambient_writekey == "" かどうかで場合分けが必要。
-
-    _server.send_P(HTTP_CODE_OK, MIME_APPLICATION_JSON, PSTR("{\"writeKey\":\""));
-    _server.sendContent(_setting.ambient_writekey);
-    _server.sendContent_P(PSTR("\",\"data\":["));
-
-  } else {
-
-    _server.send_P(HTTP_CODE_OK, MIME_APPLICATION_JSON, PSTR("{\"writeKey\":\"\",\"data\":["));
-  }
+  _server.send_P(HTTP_CODE_OK, MIME_APPLICATION_JSON, PSTR("{\"chip_id\":\""));
+  _server.sendContent(String(ESP.getChipId(), HEX));
+  _server.sendContent_P(PSTR("\",\"data\":["));
 
   auto need_comma = false;
 
@@ -233,6 +220,10 @@ static void handleGetSetting() {
 
 static inline void badRequest_P(PGM_P message) {
   _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, message);
+}
+
+static inline void errorWhileSave() {
+  _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
 }
 
 static void handlePostSetting() {
@@ -277,7 +268,7 @@ static void handlePostSetting() {
     _setting.tzcity = tzcity;
 
     if (!saveSetting()) {
-      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      errorWhileSave();
       return;
     }
 
@@ -321,7 +312,7 @@ static void handlePostSetting() {
     _setting.ntp.assign(new_ntp.cbegin(), new_ntp.cend());
 
     if (!saveSetting()) {
-      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      errorWhileSave();
       return;
     }
 
@@ -330,21 +321,22 @@ static void handlePostSetting() {
 
   } else if (contains(dic, "elev")) {
 
-    auto elev = static_cast<float>(atof(dic.at("elev").c_str()));
+    auto elev     = static_cast<float>(atof(dic.at("elev").c_str()));
     _setting.elev = elev;
 
     if (!saveSetting()) {
-      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      errorWhileSave();
       return;
     }
 
   } else if (contains(dic, "auto_brightness")) {
 
-    auto auto_brightness = dic.at("auto_brightness") == "true";
+    auto auto_brightness             = dic.at("auto_brightness") == "true";
     _setting.brightness.manual_value = auto_brightness ? -1 : std::min(_bn.getValue(), (int8_t)0);
+    _bn.changeSetting(_setting.brightness);
 
     if (!saveSetting()) {
-      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      errorWhileSave();
       return;
     }
 
@@ -352,11 +344,43 @@ static void handlePostSetting() {
 
     auto manual_brightness           = atoi(dic.at("manual_brightness").c_str());
     _setting.brightness.manual_value = manual_brightness;
+    _bn.changeSetting(_setting.brightness);
 
     if (!saveSetting()) {
-      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      errorWhileSave();
       return;
     }
+
+  } else if (contains(dic, "ambient-channelid")) {
+
+    _setting.use_ambient             = contains(dic, "use-ambient");
+    _setting.ambient_channelid       = atoi(dic.at("ambient-channelid").c_str());
+    _setting.ambient_writekey        = dic.at("ambient-writekey");
+    _setting.use_custom_server       = contains(dic, "use-custom_server");
+    _setting.custom_server_addr      = dic.at("custom_server-sddr");
+    _setting.custom_server_writekey  = dic.at("custom_server-writekey");
+
+    if (!saveSetting()) {
+      errorWhileSave();
+      return;
+    }
+
+  } else if (contains(dic, "reset")) {
+
+    if (dic.at("reset") != "reset") {
+      badRequest_P(PSTR("Unknown or empty params"));
+      return;
+    }
+
+    _setting.resetToDefault();
+
+    if (!saveSetting()) {
+      errorWhileSave();
+      return;
+    }
+
+    reboot();
+    return;
 
   } else {
     badRequest_P(PSTR("Unknown or empty params"));
@@ -381,7 +405,6 @@ void setupServer() {
   _server.on("/setting", HTTP_POST, handlePostSetting);
 
   _server.on("/brightness", HTTP_GET, []() {
-
     static constexpr size_t capacity = JSON_OBJECT_SIZE(2);
     DynamicJsonDocument     doc(capacity);
 

@@ -66,7 +66,8 @@ void connectWiFi() {
 
 static int httpPost(String address, const String &contentType, const String &payload) {
   HTTPClient http;
-  http.begin(address);
+  WiFiClient client;
+  http.begin(client, address);
   http.addHeader("Content-Type", contentType);
   return http.POST(payload);
 }
@@ -77,12 +78,12 @@ static int httpPost(String address, const String &contentType, const String &pay
  * @param values シリアライズするデータ（10個以下推奨）
  * @param[out] retval JSON 文字列
  */
-static void serializeEnvDatas(const size_t count, String *retval) {
+static void serializeEnvDatas(const size_t count, const String &writeKey, String *retval) {
 
   size_t              capacity = JSON_ARRAY_SIZE(count) + JSON_OBJECT_SIZE(2) + count * JSON_OBJECT_SIZE(5);
   DynamicJsonDocument doc(capacity);
 
-  doc["writeKey"] = _setting.ambient_writekey;
+  doc["writeKey"] = writeKey;
 
   auto array = doc.createNestedArray("data");
 
@@ -105,15 +106,16 @@ static void serializeEnvDatas(const size_t count, String *retval) {
  * @brief _datas を Ambient 用の形式で addr に送信
  * 
  * @param addr 宛先の HTTP アドレス
+ * @param writeKey ライトキー
  * @param maxLength 1リクエストに含める envdata_t の最大数
  * @return size_t 実際に送られた envdata_t の個数
  */
-size_t postEnvdatas(const String &addr, const size_t maxLength) {
+size_t postEnvdatas(const String &addr, const String &writeKey, const size_t maxLength) {
 
   String json;
   size_t count = std::min(_datas.size(), maxLength);
 
-  serializeEnvDatas(count, &json);
+  serializeEnvDatas(count, writeKey, &json);
 
   if (httpPost(addr, FPSTR(MIME_APPLICATION_JSON), json) == HTTP_CODE_OK)
     return count;

@@ -91,6 +91,7 @@
               <span>現在の測定値：</span><span id="adc"></span>
               <meter id="adc-meter" min="0" max="1024" style="flex-grow: 100;"></meter>
             </div>
+            <span>周囲が明るいほど値が小さくなります</span>
           </div>
         </div>
 
@@ -119,6 +120,7 @@
         <div class="card">
           <form action="/setting" method="POST" class="card-body require-reboot">
             <h5 class="card-title">NTP サーバー</h5>
+            <p class="card-text">※うるう秒を正しく表示するためには、SLEW モードで動作する NTP サーバーを指定しないで下さい</p>
             <div class="form-row">
               <div class="form-group col-md-4">
                 <label for="ntp1">第1サーバー</label>
@@ -143,6 +145,7 @@
         <div class="card">
           <form action="/setting" method="POST" class="card-body">
             <h5 class="card-title">海面更正</h5>
+            <p class="card-text">測定気圧（現地気圧）を海面気圧に変換（更正）するための設定です</p>
             <div id="group-elev" class="form-group">
               <label for="elev">設置場所の標高 (m)</label>
               <input type="number" id="elev" class="form-control disable-until-load" disabled name="elev"
@@ -158,7 +161,7 @@
             <div class="form-group">
               <div class="custom-control custom-switch">
                 <input type="checkbox" id="use-ambient" class="custom-control-input disable-until-load" disabled
-                  name="use-ambient">
+                  name="use-ambient" value="on">
                 <label class="custom-control-label" for="use-ambient">Ambient に気温データを送る</label>
               </div>
             </div>
@@ -175,7 +178,7 @@
             <div class="form-group">
               <div class="custom-control custom-switch">
                 <input type="checkbox" id="use-custom-server" class="custom-control-input disable-until-load" disabled
-                  name="use-custom-server">
+                  name="use-custom-server" value="on">
                 <label class="custom-control-label" for="use-custom-server">
                   Ambient 以外のサーバーに POST する（JSON のフォーマットは Ambient と共通）
                 </label>
@@ -209,6 +212,21 @@
             </p>
           </div>
         </div>
+
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body require-reboot">
+            <h5 class="card-title">設定リセット</h5>
+            <p class="card-text">Wi-Fi 設定以外の設定を、出荷時設定にリセットします。</p>
+            <input type="hidden" name="reset" value="reset">
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>リセットして再起動</button>
+          </form>
+        </div>
+
+        <div id="設定"
+          class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">ソフトウェアアップデート</h1>
+        </div>
+        <a class="btn btn-primary" href="/update" role="button">アップデート画面を開く</a>
 
       </main>
     </div>

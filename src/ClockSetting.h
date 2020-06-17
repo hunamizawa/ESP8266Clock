@@ -144,9 +144,9 @@ public:
 
     auto brightness_j = doc["brightness"];
     if (brightness_j) {
-      auto thresholds = brightness_j["thresholds"].as<JsonArray>();
-      if (thresholds && thresholds.size() == brightness.thresholds.size()) {
-        copyArray(thresholds, brightness.thresholds);
+      auto thresholds_j = brightness_j["thresholds"].as<JsonArray>();
+      if (thresholds_j && thresholds_j.size() == brightness.thresholds.size()) {
+        copyArray(thresholds_j, brightness.thresholds);
       } else {
         brightness.thresholds = DEFAULT_BRIGHTNESS_THRESHOLDS;
       }

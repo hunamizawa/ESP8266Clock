@@ -205,14 +205,38 @@ void loop() {
       readEnvironment();
     }
 
-    if (tm.tm_sec == 0 && tm.tm_min % DATA_SEND_INTERVAL == 0) {
-      // 重い処理なのでなるべくループの最後に実行する
-      if (_setting.use_ambient && _setting.ambient_channelid != 0 && _setting.ambient_writekey) {
-        auto ambient_addr = "http://ambidata.io/api/v2/channels/" + String(_setting.ambient_channelid) + "/data";
-        postEnvdatas(ambient_addr, DATA_SEND_MAXCOUNT);
+    // 重い処理なのでなるべくループの最後に実行する
+    if (tm.tm_sec == 3 && tm.tm_min % DATA_SEND_INTERVAL == 0) {
+
+      size_t ambient_transfered, custom_server_transfered;
+      auto   enable_ambient       = _setting.use_ambient && _setting.ambient_channelid != 0 && _setting.ambient_writekey;
+      auto   enable_custom_server = _setting.use_custom_server && _setting.custom_server_addr;
+
+      if (enable_ambient) {
+        auto ambient_addr  = "http://ambidata.io/api/v2/channels/" + String(_setting.ambient_channelid) + "/data";
+        ambient_transfered = postEnvdatas(ambient_addr, _setting.ambient_writekey, DATA_SEND_MAXCOUNT);
+
+        if (!enable_custom_server) {
+          for (size_t i = 0; i < ambient_transfered; i++)
+            _datas.pop_front();
+        }
       }
-      if (_setting.use_custom_server && _setting.custom_server_addr) {
-        postEnvdatas(_setting.custom_server_addr, DATA_SEND_MAXCOUNT);
+
+      if (enable_custom_server) {
+        if (enable_ambient)
+          yield();
+
+        custom_server_transfered = postEnvdatas(_setting.custom_server_addr, _setting.custom_server_writekey, DATA_SEND_MAXCOUNT);
+
+        if (!enable_ambient) {
+          for (size_t i = 0; i < custom_server_transfered; i++)
+            _datas.pop_front();
+        }
+      }
+
+      if (enable_ambient && enable_custom_server && ambient_transfered == custom_server_transfered) {
+        for (size_t i = 0; i < ambient_transfered; i++)
+          _datas.pop_front();
       }
     }
   }

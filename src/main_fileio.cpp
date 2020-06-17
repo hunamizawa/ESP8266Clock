@@ -17,6 +17,7 @@ void readSetting() {
     _setting.deserialize(json);
   } else {
     // 読み込みに失敗したらデフォルト値を使う
+    Serial.println("WARNING: Failed to read file '/setting'.");
     _setting.resetToDefault();
   }
   
