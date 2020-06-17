@@ -177,7 +177,6 @@ static void handleGetEnvdata() {
     return;
   }
 
-  String                  json;
   static constexpr size_t capacity = JSON_OBJECT_SIZE(5);
   DynamicJsonDocument     doc(capacity);
 
@@ -202,9 +201,6 @@ static void handleGetEnvdata() {
 
   for (envdata_t data : _datas) {
 
-    // serializeJson は Append 動作なので、変数 json を for　の外に出してはいけない
-    String json;
-
     if (need_comma)
       _server.sendContent_P(PSTR(","));
 
@@ -214,8 +210,11 @@ static void handleGetEnvdata() {
     doc["d2"]      = ftostrf(data.humidity, 1);
     doc["d3"]      = ftostrf(data.pressure, 2);
 
+    // serializeJson は Append 動作なので、変数 json を for　の外に出してはいけない
+    String json;
     serializeJson(doc, json);
     _server.sendContent(json);
+
     doc.clear();
 
     need_comma = true;
@@ -336,6 +335,27 @@ static void handlePostSetting() {
 
     if (!saveSetting()) {
       _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      return;
+    }
+
+  } else if (contains(dic, "auto_brightness")) {
+
+    auto auto_brightness = dic.at("auto_brightness") == "true";
+    _setting.brightness.manual_value = auto_brightness ? -1 : std::min(_bn.getValue(), (int8_t)0);
+
+    if (!saveSetting()) {
+      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      return;
+    }
+
+  } else if (contains(dic, "manual_brightness")) {
+
+    auto manual_brightness           = atoi(dic.at("manual_brightness").c_str());
+    _setting.brightness.manual_value = manual_brightness;
+
+    if (!saveSetting()) {
+      _server.send_P(HTTP_CODE_INTERNAL_SERVER_ERROR, MIME_TEXT_PLAIN, PSTR("An error occured while saving settings"));
+      return;
     }
 
   } else {
@@ -360,10 +380,17 @@ void setupServer() {
 
   _server.on("/setting", HTTP_POST, handlePostSetting);
 
-  // /adc ―― 最新の ADC の値を返す
-  _server.on("/adc", []() {
-    auto v = _bn.calcAverageRawValue();
-    _server.send(HTTP_CODE_OK, MIME_TEXT_PLAIN, String(v));
+  _server.on("/brightness", HTTP_GET, []() {
+
+    static constexpr size_t capacity = JSON_OBJECT_SIZE(2);
+    DynamicJsonDocument     doc(capacity);
+
+    doc["brightness"] = _bn.getValue();
+    doc["adc"]        = _bn.calcAverageRawValue();
+
+    String json;
+    serializeJson(doc, json);
+    _server.send(HTTP_CODE_OK, MIME_APPLICATION_JSON, json);
   });
 
   // パスに対するハンドラが定義されていない場合、SPIFFS にあるファイルを返そうとしてみる

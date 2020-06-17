@@ -1,10 +1,12 @@
 /*global $, tz_cities*/
 
+const debug = document.location.protocol === 'file:';
+
 const setting_mock = {
   "pane": "DATE_TIME",
   "override_pane": "NORMAL",
   "brightness": {
-    "manual_value": -1,
+    "manual_value": 3,
     "thresholds": [1024, 360, 270, 200, 160, 120],
     "hysteresis": 10
   },
@@ -17,6 +19,12 @@ const setting_mock = {
   "ambient_writekey": "123456789012345678",
   "use_custom_server": false,
   "custom_server_addr": "http://example.com/",
+  "custom_server_writekey": "123456789012345678",
+};
+
+const brightness_mock = {
+  "brightness": 4,
+  "adc": 210,
 };
 
 function changeTzCities(area) {
@@ -28,16 +36,16 @@ function changeTzCities(area) {
   }
 }
 
-function toggleVisibillityWithCheckbox(checkbox, slave) {
-  if (checkbox.prop('checked'))
+function toggleVisibillityWithCheckbox(checkbox, slave, reverse = false) {
+  if (checkbox.prop('checked') != reverse)
     slave.show();
   else
     slave.hide();
 }
 
-function assignHandlerWithCheckbox(checkbox, slave) {
+function assignHandlerWithCheckbox(checkbox, slave, reverse = false) {
   checkbox.on('change', function () {
-    if (checkbox.prop('checked'))
+    if (checkbox.prop('checked') != reverse)
       slave.show(500);
     else
       slave.hide(500);
@@ -57,10 +65,6 @@ function prepareComponents() {
     changeTzCities(area);
   });
 
-  $('#auto-brightness').on('change', function () {
-    $('#brightness').prop('disabled', $(this).prop('checked'));
-  });
-
   $('#panes').on('click', function (e) {
     const pane = $(e.target).val();
     if (pane)
@@ -73,9 +77,22 @@ function prepareComponents() {
       postSettings({ override_pane });
   });
 
+  $('#auto-brightness').on('change', function () {
+    const auto_brightness = $('#auto-brightness').prop('checked');
+    postSettings({ auto_brightness });
+  });
+
+  $('#brightness-range').on('change', function () {
+    if (!$('#brightness-range').prop('disabled')) {
+      const manual_brightness = $('#brightness-range').val();
+      postSettings({ manual_brightness });
+    }
+  });
+
   assignHandlerWithCheckbox($('#use-ambient'), $('#group-ambient-channelid'));
   assignHandlerWithCheckbox($('#use-ambient'), $('#group-ambient-writekey'));
   assignHandlerWithCheckbox($('#use-custom-server'), $('#group-custom-server-addr'));
+  assignHandlerWithCheckbox($('#use-custom-server'), $('#group-custom-server-writekey'));
 }
 
 function toggle_btn_group(selector, value) {
@@ -92,12 +109,7 @@ function setSettingValues(setting) {
   changeTzCities(setting.tzarea);
   $(`#tzcity > option[value=${setting.tzcity}]`).prop('selected', true);
 
-  toggle_btn_group('#panes', setting.pane);
-  toggle_btn_group('#override_panes', setting.override_pane);
-
-  const auto_brightness = setting.brightness.manual_value == -1;
-  $('#brightness').prop('disabled', auto_brightness);
-  $('#auto-brightness').prop('checked', auto_brightness);
+  setDisplaySetting(setting);
 
   $('#ntp1').val(setting.ntp[0]);
   if (setting.ntp.length > 1)
@@ -113,84 +125,130 @@ function setSettingValues(setting) {
 
   $('#use-custom-server').prop('checked', setting.use_custom_server);
   $('#custom-server-addr').val(setting.custom_server_addr);
+  $('#custom-server-writekey').val(setting.custom_server_writekey);
 
   toggleVisibillityWithCheckbox($('#use-ambient'), $('#group-ambient-channelid'));
   toggleVisibillityWithCheckbox($('#use-ambient'), $('#group-ambient-writekey'));
   toggleVisibillityWithCheckbox($('#use-custom-server'), $('#group-custom-server-addr'));
+  toggleVisibillityWithCheckbox($('#use-custom-server'), $('#group-custom-server-writekey'));
 
+}
+
+function beforeLoad() {
+
+  $('.disable-until-load').prop('disabled', true);
+  $('.disable-on-load').prop('disabled', true);
+}
+
+function afterLoad() {
+
+  $('.disable-until-load').prop('disabled', false);
 }
 
 function loadAllSettings(cb) {
 
-  $('.disable-until-load').prop('disabled', true);
+  beforeLoad();
 
-  function handler(data) {
-    setSettingValues(data);
-    $('.disable-until-load').prop('disabled', false);
-  }
+  if (debug) {
 
-  $.getJSON('/setting', handler)
-    .always(() => {
+    setSettingValues(setting_mock);
+    setBrightnessInfo(brightness_mock);
+
+    afterLoad();
+
+    if (cb)
       cb();
-    });
+  } else {
 
-  // handler(setting_mock);
-  // cb();
+    $.when(
+      $.getJSON('/setting', setSettingValues),
+      $.getJSON('/brightness', setBrightnessInfo)
+    ).done(() => {
+      afterLoad();
+    }).always(() => {
+      if (cb)
+        cb();
+    });
+  }
 }
 
 function postSettings(data, cb) {
 
-  $('.disable-until-load').prop('disabled', true);
+  beforeLoad();
 
-  if (reloadTimer == null) {
-    setTimeout(() => postSettings(data, cb), 100);
-    return;
-  }
+  if (debug) {
 
-  clearTimeout(reloadTimer);
-  reloadTimer = null;
-
-  $.ajax({
-    method: 'POST',
-    dataType: 'json',
-    url: '/setting',
-    data: data,
-    success: setSettingValues
-  }).always(() => {
-    $('.disable-until-load').prop('disabled', false);
-    reloadTimer = setTimeout(reloadDisplayMode, 1000);
+    console.log(data);
+    setSettingValues(setting_mock);
+    afterLoad();
     if (cb)
       cb();
-  });
+  } else {
 
-  // setSettingValues(setting_mock);
-  // $('.disable-until-load').prop('disabled', false);
-  // cb();
+    if (reloadTimer == null) {
+      setTimeout(() => postSettings(data, cb), 100);
+      return;
+    }
+
+    clearTimeout(reloadTimer);
+    reloadTimer = null;
+
+    $.ajax({
+      method: 'POST',
+      dataType: 'json',
+      url: '/setting',
+      data: data,
+      success: setSettingValues
+    }).always(() => {
+      afterLoad();
+      reloadTimer = setTimeout(reloadDisplayInfo, 1000);
+      if (cb)
+        cb();
+    });
+  }
+}
+
+function setDisplaySetting(setting) {
+
+  toggle_btn_group('#panes', setting.pane);
+  toggle_btn_group('#override_panes', setting.override_pane);
+
+  const auto_brightness = setting.brightness.manual_value == -1;
+  $('#auto-brightness').prop('checked', auto_brightness);
+  $('#brightness-range').prop('disabled', auto_brightness);
+}
+
+function setBrightnessInfo(data) {
+
+  $('#brightness').text(data.brightness);
+  $('#brightness-meter').val(data.brightness);
+  $('#adc').text(data.adc);
+  $('#adc-meter').val(data.adc);
 }
 
 let reloadTimer = null;
 
-function reloadDisplayMode() {
-
-  function handler(data) {
-
-    toggle_btn_group('#panes', data.pane);
-    toggle_btn_group('#override_panes', data.override_pane);
-
-  }
+function reloadDisplayInfo() {
 
   reloadTimer = null;
 
-  $.getJSON('/setting', handler)
-    .always(() => reloadTimer = setTimeout(reloadDisplayMode, 1000));
+  if (debug) {
 
-  // handler(setting_mock);
-  // reloadTimer = setTimeout(reloadDisplayMode, 1000);
+    setDisplaySetting(setting_mock);
+    setBrightnessInfo(brightness_mock);
+    reloadTimer = setTimeout(reloadDisplayInfo, 1000);
+  } else {
+
+    $.when(
+      $.getJSON('/setting', setDisplaySetting),
+      $.getJSON('/brightness', setBrightnessInfo)
+    ).always(() => reloadTimer = setTimeout(reloadDisplayInfo, 1000));
+  }
 }
 
 $(function () {
   prepareComponents();
   loadAllSettings(() => {
-    reloadTimer = setTimeout(reloadDisplayMode, 1000);
+    reloadTimer = setTimeout(reloadDisplayInfo, 1000);
   });
 });

@@ -8,8 +8,13 @@
     integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
   <link rel="stylesheet" href="common.css">
   <style>
-    form {
+    .card {
+      margin-top: 16px;
       margin-bottom: 16px;
+    }
+
+    meter {
+      margin-left: 16px;
     }
   </style>
   <title>ESP8266Clock</title>
@@ -28,45 +33,64 @@
           class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
           <h1 class="h2">ディスプレイ</h1>
         </div>
-        <div id="panes" class="form-group">
-          <label>画面切り替え</label>
-          <div class="btn-group btn-group-toggle" data-toggle="buttons">
-            <label class="btn btn-outline-secondary">
-              <input type="radio" name="pane" class="disable-until-load" disabled value="DATE_TIME"> 日付＋時刻
-            </label>
-            <label class="btn btn-outline-secondary">
-              <input type="radio" name="pane" class="disable-until-load" disabled value="TEMP_HUMI_TIME"> 温度＋湿度＋時刻
-            </label>
-            <label class="btn btn-outline-secondary">
-              <input type="radio" name="pane" class="disable-until-load" disabled value="PRES_TIME"> 気圧＋時刻
-            </label>
-            <label class="btn btn-outline-secondary">
-              <input type="radio" name="pane" class="disable-until-load" disabled value="TIME"> 時刻のみ
-            </label>
-            <label class="btn btn-outline-secondary">
-              <input type="radio" name="pane" class="disable-until-load" disabled value="IP_ADDR"> IPアドレス表示
-            </label>
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">画面モード切り替え</h5>
+            <div id="panes" class="form-group">
+              <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="DATE_TIME"> 日付＋時刻
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="TEMP_HUMI_TIME"> 温度＋湿度＋時刻
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="PRES_TIME"> 気圧＋時刻
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="TIME"> 時刻のみ
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="IP_ADDR"> IPアドレス表示
+                </label>
+              </div>
+            </div>
+            <div id="override_panes" class="form-group" style="margin-top: 16px;">
+              <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="override_pane" class="disable-until-load" disabled value="NORMAL"> 通常
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="override_pane" class="disable-until-load" disabled value="TEST"> 全点灯テスト
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="override_pane" class="disable-until-load" disabled value="OFF"> 画面オフ
+                </label>
+              </div>
+            </div>
           </div>
         </div>
-        <div id="override_panes" class="form-group">
-          <div class="btn-group btn-group-toggle" data-toggle="buttons">
-            <label class="btn btn-outline-secondary">
-              <input type="radio" name="override_pane" class="disable-until-load" disabled value="NORMAL"> 通常
-            </label>
-            <label class="btn btn-outline-secondary">
-              <input type="radio" name="override_pane" class="disable-until-load" disabled value="TEST"> 全点灯テスト
-            </label>
-            <label class="btn btn-outline-secondary">
-              <input type="radio" name="override_pane" class="disable-until-load" disabled value="OFF"> 画面オフ
-            </label>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">明るさ</h5>
+            <div class="custom-control custom-switch" style="display: inline-block; margin-right: 16px;">
+              <input type="checkbox" id="auto-brightness" class="custom-control-input disable-until-load" disabled>
+              <label class="custom-control-label" for="auto-brightness">自動</label>
+            </div>
+            <label for="brightness-range">明るさ：</label>
+            <span id="brightness" style="margin-right: 16px;"></span>
+            <input type="range" id="brightness-range" class="form-control-range custom-range" min="0" max="15" disabled>
           </div>
         </div>
-        <div class="form-group">
-          <label for="brightness">明るさ</label>
-          <input type="range" id="brightness" class="form-control-range custom-range" min="0" max="15" disabled>
-          <div class="custom-control custom-switch">
-            <input type="checkbox" id="auto-brightness" class="custom-control-input disable-until-load" disabled>
-            <label class="custom-control-label" for="auto-brightness">自動</label>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">明るさ自動制御</h5>
+            <div style="display: flex; margin-top: 16px;">
+              <span>現在の測定値：</span><span id="adc"></span>
+              <meter id="adc-meter" min="0" max="1024" style="flex-grow: 100;"></meter>
+            </div>
           </div>
         </div>
 
@@ -75,97 +99,122 @@
           <h1 class="h2">各種設定</h1>
         </div>
 
-        <h2 class="h3">タイムゾーン</h2>
-        <form action="/setting" method="POST" class="require-reboot">
-          <div class="form-row">
-            <div class="form-group col-md-6">
-              <label for="tzarea">地域</label>
-              <select id="tzarea" name="tzarea" class="form-control disable-until-load" disabled></select>
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body require-reboot">
+            <h5 class="card-title">タイムゾーン</h5>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="tzarea">地域</label>
+                <select id="tzarea" name="tzarea" class="form-control disable-until-load" disabled></select>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="tzcity">都市名</label>
+                <select id="tzcity" name="tzcity" class="form-control disable-until-load" disabled></select>
+              </div>
             </div>
-            <div class="form-group col-md-6">
-              <label for="tzcity">都市名</label>
-              <select id="tzcity" name="tzcity" class="form-control disable-until-load" disabled></select>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定して再起動</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body require-reboot">
+            <h5 class="card-title">NTP サーバー</h5>
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label for="ntp1">第1サーバー</label>
+                <input type="text" id="ntp1" class="form-control disable-until-load" disabled name="ntp1"
+                  autocomplete="off" maxlength="253" required>
+              </div>
+              <div class="form-group col-md-4">
+                <label for="ntp2">第2サーバー（オプション）</label>
+                <input type="text" id="ntp2" class="form-control disable-until-load" disabled name="ntp2"
+                  autocomplete="off" maxlength="253">
+              </div>
+              <div class="form-group col-md-4">
+                <label for="ntp3">第3サーバー（オプション）</label>
+                <input type="text" id="ntp3" class="form-control disable-until-load" disabled name="ntp3"
+                  autocomplete="off" maxlength="253">
+              </div>
             </div>
-          </div>
-          <button type="submit" class="btn btn-primary disable-until-load" disabled>設定して再起動</button>
-        </form>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定して再起動</button>
+          </form>
+        </div>
 
-        <h2 class="h3">NTP サーバー</h2>
-        <form action="/setting" method="POST" class="require-reboot">
-          <div class="form-group">
-            <label for="ntp1">第1サーバー</label>
-            <input type="text" id="ntp1" class="form-control disable-until-load" disabled name="ntp1" autocomplete="off"
-              maxlength="253" required>
-          </div>
-          <div class="form-group">
-            <label for="ntp2">第2サーバー（オプション）</label>
-            <input type="text" id="ntp2" class="form-control disable-until-load" disabled name="ntp2" autocomplete="off"
-              maxlength="253">
-          </div>
-          <div class="form-group">
-            <label for="ntp3">第3サーバー（オプション）</label>
-            <input type="text" id="ntp3" class="form-control disable-until-load" disabled name="ntp3" autocomplete="off"
-              maxlength="253">
-          </div>
-          <button type="submit" class="btn btn-primary disable-until-load" disabled>設定して再起動</button>
-        </form>
-
-        <h2 class="h3">海面更正</h2>
-        <form action="/setting" method="POST">
-          <div id="group-elev" class="form-group">
-            <label for="elev">設置場所の標高 (m)</label>
-            <input type="number" id="elev" class="form-control disable-until-load" disabled name="elev" autocomplete="off"
-              required>
-          </div>
-          <button type="submit" class="btn btn-primary disable-until-load" disabled>設定</button>
-        </form>
-
-        <h2 class="h3">気温データ送信</h2>
-        <form action="/setting" method="POST">
-          <div class="form-group">
-            <div class="custom-control custom-switch">
-              <input type="checkbox" id="use-ambient" class="custom-control-input disable-until-load" disabled>
-              <label class="custom-control-label" for="use-ambient">Ambient に気温データを送る</label>
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body">
+            <h5 class="card-title">海面更正</h5>
+            <div id="group-elev" class="form-group">
+              <label for="elev">設置場所の標高 (m)</label>
+              <input type="number" id="elev" class="form-control disable-until-load" disabled name="elev"
+                autocomplete="off" required>
             </div>
-          </div>
-          <div id="group-ambient-channelid" class="form-group">
-            <label for="ambient-channelid">チャネル ID</label>
-            <input type="number" id="ambient-channelid" class="form-control disable-until-load" disabled name="ambient-channelid"
-              autocomplete="off" min="0">
-          </div>
-          <div id="group-ambient-writekey" class="form-group">
-            <label for="ambient-writekey">ライトキー</label>
-            <input type="text" id="ambient-writekey" class="form-control disable-until-load" disabled name="ambient-writekey"
-              autocomplete="off">
-          </div>
-          <div class="form-group">
-            <div class="custom-control custom-switch">
-              <input type="checkbox" id="use-custom-server" class="custom-control-input disable-until-load" disabled>
-              <label class="custom-control-label" for="use-custom-server">
-                自分のサーバーに POST する（JSON のフォーマットは Ambient と共通）
-              </label>
-            </div>
-          </div>
-          <div id="group-custom-server-addr" class="form-group">
-            <label for="custom-server-addr">URL</label>
-            <input type="url" id="custom-server-addr" class="form-control disable-until-load" disabled
-              name="custom-server-addr" autocomplete="off">
-          </div>
-          <button type="submit" class="btn btn-primary disable-until-load" disabled>設定</button>
-        </form>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定</button>
+          </form>
+        </div>
 
-        <h2 class="h3">Wi-Fi 設定</h2>
-        <p>Wi-Fi 設定を開くには、</p>
-        <ol>
-          <li>本体の [SELECT] ボタンを押しながら [RESET] ボタンを押します。</li>
-          <li>本体に「設定して下さい」と表示されたら、お使いのPCまたはスマホで、アクセスポイント「ESP8266Clock」に接続します。</li>
-          <li></li>
-        </ol>
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body">
+            <h5 class="card-title">気温データ送信</h5>
+            <div class="form-group">
+              <div class="custom-control custom-switch">
+                <input type="checkbox" id="use-ambient" class="custom-control-input disable-until-load" disabled
+                  name="use-ambient">
+                <label class="custom-control-label" for="use-ambient">Ambient に気温データを送る</label>
+              </div>
+            </div>
+            <div id="group-ambient-channelid" class="form-group">
+              <label for="ambient-channelid">チャネル ID</label>
+              <input type="number" id="ambient-channelid" class="form-control disable-until-load" disabled
+                name="ambient-channelid" autocomplete="off" min="0">
+            </div>
+            <div id="group-ambient-writekey" class="form-group">
+              <label for="ambient-writekey">ライトキー</label>
+              <input type="text" id="ambient-writekey" class="form-control disable-until-load" disabled
+                name="ambient-writekey" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <div class="custom-control custom-switch">
+                <input type="checkbox" id="use-custom-server" class="custom-control-input disable-until-load" disabled
+                  name="use-custom-server">
+                <label class="custom-control-label" for="use-custom-server">
+                  Ambient 以外のサーバーに POST する（JSON のフォーマットは Ambient と共通）
+                </label>
+              </div>
+            </div>
+            <div id="group-custom-server-addr" class="form-group">
+              <label for="custom-server-addr">URL</label>
+              <input type="url" id="custom-server-addr" class="form-control disable-until-load" disabled
+                name="custom-server-addr" autocomplete="off">
+            </div>
+            <div id="group-custom-server-writekey" class="form-group">
+              <label for="custom-server-writekey">ライトキー</label>
+              <input type="text" id="custom-server-writekey" class="form-control disable-until-load" disabled
+                name="custom-server-writekey" autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Wi-Fi 設定</h5>
+            <p class="card-text">
+              Wi-Fi 設定を開くには、
+            <ol>
+              <li>本体の [SELECT] ボタンを押しながら [RESET] ボタンを押します。</li>
+              <li>本体に「設定して下さい」と表示されたら、お使いのPCまたはスマホで、アクセスポイント「ESP8266Clock」に接続します。</li>
+              <li>「Wi-Fi ネットワークにログイン」などの通知をタップまたはクリックして、設定画面を開きます。</li>
+              <li>SSID とパスワードを入力します。</li>
+            </ol>
+            </p>
+          </div>
+        </div>
+
       </main>
     </div>
   </div>
-  <script src="https://code.jquery.com/jquery-3.4.1.min.js"
-    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
     integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
     crossorigin="anonymous"></script>

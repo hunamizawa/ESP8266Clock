@@ -79,6 +79,8 @@ public:
   bool                 use_custom_server;
   //! 観測データの送り先
   String               custom_server_addr;
+  //! custom_server 用のライトキー
+  String               custom_server_writekey;
 
   /**
    * @brief このクラスをシリアライズする
@@ -107,12 +109,13 @@ public:
     for (auto &&i : ntp)
       ntp_j.add(i);
 
-    doc["elev"]               = elev;
-    doc["use_ambient"]        = use_ambient;
-    doc["ambient_channelid"]  = ambient_channelid;
-    doc["ambient_writekey"]   = ambient_writekey;
-    doc["use_custom_server"]  = use_custom_server;
-    doc["custom_server_addr"] = custom_server_addr;
+    doc["elev"]                   = elev;
+    doc["use_ambient"]            = use_ambient;
+    doc["ambient_channelid"]      = ambient_channelid;
+    doc["ambient_writekey"]       = ambient_writekey;
+    doc["use_custom_server"]      = use_custom_server;
+    doc["custom_server_addr"]     = custom_server_addr;
+    doc["custom_server_writekey"] = custom_server_writekey;
 
     serializeJson(doc, retval);
   }
@@ -149,7 +152,7 @@ public:
       }
 
       brightness.manual_value = getOrDefault(brightness_j, "manual_value", DEFAULT_BRIGHTNESS_MANUAL_VALUE);
-      brightness.hysteresis   = getOrDefault(brightness_j, "hysteresis", DEFAULT_BRIGHTNESS_HYSTERESIS);
+      brightness.hysteresis   = getOrDefault(brightness_j, "hysteresis",   DEFAULT_BRIGHTNESS_HYSTERESIS);
 
     } else {
       brightness = DEFAULT_BRIGHTNESS;
@@ -169,30 +172,32 @@ public:
       ntp.push_back(DEFAULT_NTP_SERVER);
     }
 
-    elev               = getOrDefault(doc, "elev", DEFAULT_ELEV);
-    use_ambient        = getOrDefault(doc, "use_ambient", DEFAULT_USE_AMBIENT);
-    ambient_channelid  = getOrDefault(doc, "ambient_channelid", DEFAULT_AMBIENT_CHANNELID);
-    ambient_writekey   = getOrDefault(doc, "ambient_writekey", DEFAULT_AMBIENT_WRITEKEY);
-    use_custom_server  = getOrDefault(doc, "use_custom_server", DEFAULT_USE_CUSTOM_SERVER);
-    custom_server_addr = getOrDefault(doc, "custom_server_addr", DEFAULT_CUSTOM_SERVER_ADDR);
+    elev                   = getOrDefault(doc, "elev",                   DEFAULT_ELEV);
+    use_ambient            = getOrDefault(doc, "use_ambient",            DEFAULT_USE_AMBIENT);
+    ambient_channelid      = getOrDefault(doc, "ambient_channelid",      DEFAULT_AMBIENT_CHANNELID);
+    ambient_writekey       = getOrDefault(doc, "ambient_writekey",       DEFAULT_AMBIENT_WRITEKEY);
+    use_custom_server      = getOrDefault(doc, "use_custom_server",      DEFAULT_USE_CUSTOM_SERVER);
+    custom_server_addr     = getOrDefault(doc, "custom_server_addr",     DEFAULT_CUSTOM_SERVER_ADDR);
+    custom_server_writekey = getOrDefault(doc, "custom_server_writekey", DEFAULT_CUSTOM_SERVER_ADDR);
   }
 
   /**
    * @brief 設定を全てリセットして初期値に戻す
    */
   void resetToDefault() {
-    pane               = DEFAULT_PANE;
-    override_pane      = DEFAULT_OVERRIDE_PANE;
-    brightness         = DEFAULT_BRIGHTNESS;
-    tzarea             = DEFAULT_TZAREA;
-    tzcity             = DEFAULT_TZCITY;
-    ntp                = {DEFAULT_NTP_SERVER};
-    elev               = DEFAULT_ELEV;
-    use_ambient        = DEFAULT_USE_AMBIENT;
-    ambient_channelid  = DEFAULT_AMBIENT_CHANNELID;
-    ambient_writekey   = DEFAULT_AMBIENT_WRITEKEY;
-    use_custom_server  = DEFAULT_USE_CUSTOM_SERVER;
-    custom_server_addr = DEFAULT_CUSTOM_SERVER_ADDR;
+    pane                   = DEFAULT_PANE;
+    override_pane          = DEFAULT_OVERRIDE_PANE;
+    brightness             = DEFAULT_BRIGHTNESS;
+    tzarea                 = DEFAULT_TZAREA;
+    tzcity                 = DEFAULT_TZCITY;
+    ntp                    = {DEFAULT_NTP_SERVER};
+    elev                   = DEFAULT_ELEV;
+    use_ambient            = DEFAULT_USE_AMBIENT;
+    ambient_channelid      = DEFAULT_AMBIENT_CHANNELID;
+    ambient_writekey       = DEFAULT_AMBIENT_WRITEKEY;
+    use_custom_server      = DEFAULT_USE_CUSTOM_SERVER;
+    custom_server_addr     = DEFAULT_CUSTOM_SERVER_ADDR;
+    custom_server_writekey = String(ESP.getChipId(), HEX);
   }
 };
 
