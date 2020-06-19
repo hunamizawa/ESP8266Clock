@@ -17,6 +17,9 @@
 #include <ESPPerfectTime.h>
 #include <MAX7219Display.h>
 
+static constexpr char   PATH_OF_SETTING[]           = "/setting";
+static constexpr size_t ADD_BYTES_SERIALIZE_ENVDATA = 43;
+
 //! ユーザーが変更可能な時計の動作設定
 extern ClockSetting _setting;
 

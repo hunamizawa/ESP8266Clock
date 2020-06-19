@@ -11,7 +11,7 @@
  */
 void readSetting() {
 
-  File f = SPIFFS.open("/setting", "r");
+  File f = SPIFFS.open(PATH_OF_SETTING, "r");
   if (f) {
     auto json = f.readString();
     _setting.deserialize(json);
@@ -32,7 +32,7 @@ void readSetting() {
  */
 bool saveSetting() {
   
-  File f = SPIFFS.open("/setting", "w");
+  File f = SPIFFS.open(PATH_OF_SETTING, "w");
   if (!f)
     return false;
   _setting.serialize(f);

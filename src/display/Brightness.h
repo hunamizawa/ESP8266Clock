@@ -41,7 +41,7 @@ private:
 
   boost::circular_buffer<TBufElem> _buffer = boost::circular_buffer<TBufElem>(64);
   brightness_setting_t             _setting;
-  uint16_t                         _current = 15;
+  uint16_t                         _current = 5;
   uint16_t                         _before  = 0;
 
   /**
@@ -74,7 +74,7 @@ public:
    * 
    * @return LED の明るさとして設定すべき値（-1 なら off）
    */
-  int8_t getValue() const;
+  int8_t getBrightness() const;
   /**
    * @brief 生の観測値の平均を計算
    * 

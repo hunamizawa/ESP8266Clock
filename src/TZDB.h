@@ -19,6 +19,9 @@ namespace TZDB {
   */
 PGM_P getTZ(const String &area, const String &city);
 
+extern const size_t area_maxlength;
+extern const size_t city_maxlength;
+
 } // namespace TZDB
 
 #endif // ESP8266Clock_TZDB_H

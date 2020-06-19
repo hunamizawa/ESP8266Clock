@@ -82,12 +82,24 @@ function prepareComponents() {
     postSettings({ auto_brightness });
   });
 
+  $('#brightness-range').on('input', function () {
+    const val = $('#brightness-range').val();
+    $('#brightness').text(val < 0 ? 'オフ' : val);
+  });
+
   $('#brightness-range').on('change', function () {
     if (!$('#brightness-range').prop('disabled')) {
       const manual_brightness = $('#brightness-range').val();
       postSettings({ manual_brightness });
     }
   });
+
+  for (let i = 0; i <= 5; i++) {
+    $(`#br-threshold-${i}-range`).on('input', function () {
+      const val = $(`#br-threshold-${i}-range`).val();
+      $(`#br-threshold-${i}`).text(val);
+    });
+  }
 
   assignHandlerWithCheckbox($('#use-ambient'), $('#group-ambient-channelid'));
   assignHandlerWithCheckbox($('#use-ambient'), $('#group-ambient-writekey'));
@@ -109,7 +121,13 @@ function setSettingValues(setting) {
   changeTzCities(setting.tzarea);
   $(`#tzcity > option[value=${setting.tzcity}]`).prop('selected', true);
 
-  setDisplaySetting(setting);
+  setDisplaySetting(setting, true);
+
+  for (let i = 0; i <= 5; i++) {
+    const val = setting.brightness.thresholds[i];
+    $(`#br-threshold-${i}`).text(val);
+    $(`#br-threshold-${i}-range`).val(val);
+  }
 
   $('#ntp1').val(setting.ntp[0]);
   if (setting.ntp.length > 1)
@@ -213,15 +231,22 @@ function setDisplaySetting(setting) {
   toggle_btn_group('#panes', setting.pane);
   toggle_btn_group('#override_panes', setting.override_pane);
 
-  const auto_brightness = setting.brightness.manual_value == -1;
+  const manual_value = setting.brightness.manual_value;
+  const auto_brightness = manual_value == -1;
   $('#auto-brightness').prop('checked', auto_brightness);
   $('#brightness-range').prop('disabled', auto_brightness);
+  if (!auto_brightness) {
+    $('#brightness').text(manual_value < 0 ? 'オフ' : manual_value);
+    $('#brightness-range').val(manual_value);
+  }
 }
 
 function setBrightnessInfo(data) {
 
-  $('#brightness').text(data.brightness);
-  $('#brightness-meter').val(data.brightness);
+  if ($('#brightness-range').prop('disabled')) {
+    $('#brightness').text(data.brightness < 0 ? 'オフ' : data.brightness);
+    $('#brightness-range').val(data.brightness);
+  }
   $('#adc').text(data.adc);
   $('#adc-meter').val(data.adc);
 }

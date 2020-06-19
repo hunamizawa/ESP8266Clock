@@ -21,13 +21,13 @@ int8_t Brightness::calcBrightness(TBufElem v) {
   else if (incrasingThan(b, v, 2) || decrasingThan(b, v, 1))
     _current = 1;
   else if (incrasingThan(b, v, 3) || decrasingThan(b, v, 2))
-    _current = 3;
+    _current = 2;
   else if (incrasingThan(b, v, 4) || decrasingThan(b, v, 3))
-    _current = 6;
+    _current = 3;
   else if (incrasingThan(b, v, 5) || decrasingThan(b, v, 4))
-    _current = 10;
+    _current = 4;
   else if (decrasingThan(b, v, 5))
-    _current = 15;
+    _current = 5;
 
   return _current;
 }
@@ -48,7 +48,7 @@ void Brightness::changeSetting(const brightness_setting_t &setting) {
   _setting = setting;
 }
 
-int8_t Brightness::getValue() const {
+int8_t Brightness::getBrightness() const {
   return _current;
 }
 

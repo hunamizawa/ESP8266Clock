@@ -41,7 +41,7 @@ void syncTime() {
   }
 
   // 有効なNTPサーバーが指定されなければデフォルト値を使用
-  if (!ntp.at(0))
+  if (i == 0)
     ntp.at(0) = DEFAULT_NTP_SERVER;
 
   // 同期開始
@@ -206,7 +206,7 @@ void loop() {
     }
 
     // 重い処理なのでなるべくループの最後に実行する
-    if (tm.tm_sec == 3 && tm.tm_min % DATA_SEND_INTERVAL == 0) {
+    if (tm.tm_sec == 3 && tm.tm_min % DATA_SEND_INTERVAL == 0 && !_datas.empty()) {
 
       size_t ambient_transfered, custom_server_transfered;
       auto   enable_ambient       = _setting.use_ambient && _setting.ambient_channelid != 0 && _setting.ambient_writekey;

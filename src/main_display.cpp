@@ -32,12 +32,22 @@ void updateDisplay(const struct tm &tm, suseconds_t usec) {
   }
 }
 
+static inline int8_t brightnessToIntensity(int8_t b) {
+  return b < 0 ? -1
+      : b == 0 ? 0
+      : b == 1 ? 1
+      : b == 2 ? 3
+      : b == 3 ? 6
+      : b == 4 ? 10
+               : 15;
+}
+
 /**
  * @brief 周囲の明るさを測定して、必要なら画面の明るさを変える
  */
 void readAndSetBrightness() {
 
-  static int8_t brightness = 15;
+  static int8_t brightness = 5;
 
   auto av = analogRead(A0);
   auto b  = _bn.update(av);
@@ -51,7 +61,8 @@ void readAndSetBrightness() {
   } else if (brightness != b) {
     if (_buffer.getOverridePane() == OverridePanes::OFF)
       _buffer.setOverridePane(OverridePanes::NORMAL);
-    _display.setIntensity(b);
+    auto intensity = brightnessToIntensity(b);
+    _display.setIntensity(intensity);
   }
 
   brightness = b;

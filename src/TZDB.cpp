@@ -1616,3 +1616,5 @@ PGM_P TZDB::getTZ(const String &area, const String &city) {
   }
   return TZ_Etc_UTC;
 }
+const size_t TZDB::area_maxlength = 11;
+const size_t TZDB::city_maxlength = 23;

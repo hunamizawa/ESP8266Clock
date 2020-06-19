@@ -10,6 +10,7 @@
 #include "setting.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <TZDB.h>
 
 // 設定の永続化には、あえて JSON を用いた
 // 将来、設定項目が増えた時に
@@ -34,17 +35,17 @@ static constexpr brightness_setting_t    DEFAULT_BRIGHTNESS              = {
     DEFAULT_BRIGHTNESS_THRESHOLDS,
     DEFAULT_BRIGHTNESS_HYSTERESIS};
 
-// #define DEFAULT_BRIGHTNESS_THRESHOLDS { 1024, 360, 270, 200, 160, 120 }
+#define DEFAULT_CUSTOM_SERVER_WRITEKEY String(ESP.getChipId(), HEX)
 
 // Copy a 1D array to a JsonArray
 template <typename T, size_t N>
-static inline bool copyArray(std::array<T, N> src, ARDUINOJSON_NAMESPACE::ArrayRef dst) {
+static inline bool copyArray(std::array<T, N> &src, ARDUINOJSON_NAMESPACE::ArrayRef dst) {
   return copyArray(src.data(), src.size(), dst);
 }
 
 // Copy a JsonArray to a 1D array
 template <typename T, size_t N>
-static inline size_t copyArray(ARDUINOJSON_NAMESPACE::ArrayConstRef src, std::array<T, N> dst) {
+static inline size_t copyArray(ARDUINOJSON_NAMESPACE::ArrayConstRef src, std::array<T, N> &dst) {
   return copyArray(src, dst.data(), dst.size());
 }
 
@@ -89,7 +90,21 @@ public:
    */
   template <class T>
   void serialize(T &retval) {
-    const size_t        capacity = JSON_ARRAY_SIZE(ntp.size()) + JSON_ARRAY_SIZE(6) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(12) + 350;
+
+    size_t capacity =
+        JSON_OBJECT_SIZE(13) + // root
+        JSON_ARRAY_SIZE(ntp.size()) +
+        JSON_ARRAY_SIZE(brightness.thresholds.size()) +
+        JSON_OBJECT_SIZE(3) + // brightness
+        TZDB::area_maxlength + TZDB::city_maxlength +
+        ambient_writekey.length() + 1 +
+        custom_server_addr.length() + 1 +
+        custom_server_writekey.length() + 1 +
+        223; // pane + override_pane + property-fields
+
+    for (auto &&i : ntp)
+      capacity += i.length() + 1;
+
     DynamicJsonDocument doc(capacity);
 
     doc["pane"]          = toString(pane);
@@ -132,11 +147,13 @@ private:
    * @param json JSON 文字列
    */
 public:
-  void deserialize(const String &json) {
-    const size_t        capacity = JSON_ARRAY_SIZE(6) + JSON_ARRAY_SIZE(6) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(12) + 350;
+  bool deserialize(const String &json) {
+    const size_t        capacity = JSON_ARRAY_SIZE(6) + JSON_ARRAY_SIZE(6) + JSON_OBJECT_SIZE(3) + JSON_OBJECT_SIZE(13) + json.length();
     DynamicJsonDocument doc(capacity);
 
-    deserializeJson(doc, json);
+    auto err = deserializeJson(doc, json);
+    if (err)
+      return false;
 
     pane = toPanes(getOrDefault(doc, "pane", toString(DEFAULT_PANE)));
     // override_pane はデシリアライズしない
@@ -178,7 +195,9 @@ public:
     ambient_writekey       = getOrDefault(doc, "ambient_writekey",       DEFAULT_AMBIENT_WRITEKEY);
     use_custom_server      = getOrDefault(doc, "use_custom_server",      DEFAULT_USE_CUSTOM_SERVER);
     custom_server_addr     = getOrDefault(doc, "custom_server_addr",     DEFAULT_CUSTOM_SERVER_ADDR);
-    custom_server_writekey = getOrDefault(doc, "custom_server_writekey", DEFAULT_CUSTOM_SERVER_ADDR);
+    custom_server_writekey = getOrDefault(doc, "custom_server_writekey", DEFAULT_CUSTOM_SERVER_WRITEKEY);
+
+    return true;
   }
 
   /**
@@ -197,10 +216,10 @@ public:
     ambient_writekey       = DEFAULT_AMBIENT_WRITEKEY;
     use_custom_server      = DEFAULT_USE_CUSTOM_SERVER;
     custom_server_addr     = DEFAULT_CUSTOM_SERVER_ADDR;
-    custom_server_writekey = String(ESP.getChipId(), HEX);
+    custom_server_writekey = DEFAULT_CUSTOM_SERVER_WRITEKEY;
   }
 };
 
-// #undef DEFAULT_BRIGHTNESS_THRESHOLDS
+#undef DEFAULT_CUSTOM_SERVER_WRITEKEY
 
 #endif // ClockSetting_H_

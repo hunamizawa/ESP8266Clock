@@ -73,26 +73,67 @@
 
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">明るさ</h5>
+            <h5 class="card-title">画面明るさ</h5>
             <div class="custom-control custom-switch" style="display: inline-block; margin-right: 16px;">
               <input type="checkbox" id="auto-brightness" class="custom-control-input disable-until-load" disabled>
               <label class="custom-control-label" for="auto-brightness">自動</label>
             </div>
-            <label for="brightness-range">明るさ：</label>
+            <label for="brightness-range">画面明るさ：</label>
             <span id="brightness" style="margin-right: 16px;"></span>
-            <input type="range" id="brightness-range" class="form-control-range custom-range" min="0" max="15" disabled>
+            <input type="range" id="brightness-range" class="form-control-range custom-range disable-on-load" min="-1"
+              max="5" step="1" disabled>
           </div>
         </div>
 
         <div class="card">
           <div class="card-body">
-            <h5 class="card-title">明るさ自動制御</h5>
+            <h5 class="card-title">画面明るさ自動制御</h5>
             <div style="display: flex; margin-top: 16px;">
-              <span>現在の測定値：</span><span id="adc"></span>
+              <span>現在の周囲光センサ測定値：</span><span id="adc"></span>
               <meter id="adc-meter" min="0" max="1024" style="flex-grow: 100;"></meter>
             </div>
             <span>周囲が明るいほど値が小さくなります</span>
           </div>
+          <form action="/setting" method="POST" class="card-body">
+            <h5 class="card-title">しきい値設定</h5>
+            <div>
+              <label for="br-threshold-0-range">画面オフ と 画面明るさ 0 の境界：</label>
+              <span id="br-threshold-0" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-0-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-0" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-0-range">画面明るさ 0 と 1 の境界：</label>
+              <span id="br-threshold-1" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-1-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-1" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-1-range">画面明るさ 1 と 2 の境界：</label>
+              <span id="br-threshold-2" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-2-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-2" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-2-range">画面明るさ 2 と 3 の境界：</label>
+              <span id="br-threshold-3" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-3-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-3" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-3-range">画面明るさ 3 と 4 の境界：</label>
+              <span id="br-threshold-4" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-4-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-4" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-4-range">画面明るさ 4 と 5 の境界：</label>
+              <span id="br-threshold-5" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-5-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-5" min="0" max="1025" step="5" disabled>
+            </div>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定</button>
+          </form>
         </div>
 
         <div id="設定"

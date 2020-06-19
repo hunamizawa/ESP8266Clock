@@ -65,8 +65,10 @@ void connectWiFi() {
 }
 
 static int httpPost(String address, const String &contentType, const String &payload) {
-  HTTPClient http;
-  WiFiClient client;
+
+  static HTTPClient http;
+  static WiFiClient client;
+
   http.begin(client, address);
   http.addHeader("Content-Type", contentType);
   return http.POST(payload);
@@ -80,7 +82,7 @@ static int httpPost(String address, const String &contentType, const String &pay
  */
 static void serializeEnvDatas(const size_t count, const String &writeKey, String *retval) {
 
-  size_t              capacity = JSON_ARRAY_SIZE(count) + JSON_OBJECT_SIZE(2) + count * JSON_OBJECT_SIZE(5);
+  size_t              capacity = JSON_ARRAY_SIZE(count) + JSON_OBJECT_SIZE(2) + count * JSON_OBJECT_SIZE(5) + ADD_BYTES_SERIALIZE_ENVDATA * count + 10 + writeKey.length();
   DynamicJsonDocument doc(capacity);
 
   doc["writeKey"] = writeKey;
@@ -94,9 +96,9 @@ static void serializeEnvDatas(const size_t count, const String &writeKey, String
     auto jdata       = array.createNestedObject();
     jdata["created"] = data.time;
     jdata["time"]    = 1;
-    jdata["d1"]      = ftostrf(data.temperature, 2);
-    jdata["d2"]      = ftostrf(data.humidity, 1);
-    jdata["d3"]      = ftostrf(data.pressure, 2);
+    jdata["d1"]      = String(data.temperature, 2);
+    jdata["d2"]      = String(data.humidity, 1);
+    jdata["d3"]      = String(data.pressure, 2);
   }
 
   serializeJson(doc, *retval);
