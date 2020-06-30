@@ -9,19 +9,6 @@ void ignoredAssert(PGM_P expression, PGM_P file, int line) {
 
 
 /**
- * @brief 小数の桁数を指定して float を文字列に変換
- * 
- * @param val 数値
- * @param prec 小数の桁数
- * @return String 結果
- */
-String ftostrf(float val, unsigned char prec) {
-  char buf[256];
-  dtostrf(val, 1, prec, buf);
-  return String(buf);
-}
-
-/**
  * @brief WDT reset を起こさない delayMicroseconds（多少ズレるが許容範囲）
  * 
  * @param us 待ち時間をマイクロ秒で指定
