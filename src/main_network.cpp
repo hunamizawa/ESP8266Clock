@@ -75,6 +75,7 @@ static int httpPost(const String &address, const String &contentType, const Stri
 #if defined(DEBUG) || defined(__PLATFORMIO_BUILD_DEBUG__)
   Serial.println("POST " + address + " : " + code);
 #endif
+  http.end();
   return code;
 }
 

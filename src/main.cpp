@@ -213,7 +213,7 @@ void loop() {
       auto   enable_custom_server = _setting.use_custom_server && _setting.custom_server_addr;
 
       if (enable_ambient) {
-        auto ambient_addr  = "http://ambidata.io/api/v2/channels/" + String(_setting.ambient_channelid) + "/data";
+        auto ambient_addr  = "http://ambidata.io/api/v2/channels/" + String(_setting.ambient_channelid) + "/dataarray";
         ambient_transfered = postEnvdatas(ambient_addr, _setting.ambient_writekey, DATA_SEND_MAXCOUNT);
 
         if (!enable_custom_server) {
