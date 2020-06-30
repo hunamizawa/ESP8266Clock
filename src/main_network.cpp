@@ -64,14 +64,18 @@ void connectWiFi() {
   }
 }
 
-static int httpPost(String address, const String &contentType, const String &payload) {
+static int httpPost(const String &address, const String &contentType, const String &payload) {
 
   static HTTPClient http;
   static WiFiClient client;
 
   http.begin(client, address);
   http.addHeader("Content-Type", contentType);
-  return http.POST(payload);
+  auto code = http.POST(payload);
+#if defined(DEBUG) || defined(__PLATFORMIO_BUILD_DEBUG__)
+  Serial.println("POST " + address + " : " + code);
+#endif
+  return code;
 }
 
 /**

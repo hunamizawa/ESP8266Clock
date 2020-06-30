@@ -201,6 +201,7 @@ function postSettings(data, cb) {
     afterLoad();
     if (cb)
       cb();
+    
   } else {
 
     if (reloadTimer == null) {
