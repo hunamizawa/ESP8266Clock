@@ -69,6 +69,7 @@ static int httpPost(const String &address, const String &contentType, const Stri
   static HTTPClient http;
   static WiFiClient client;
 
+  http.setTimeout(990);
   http.begin(client, address);
   http.addHeader("Content-Type", contentType);
   auto code = http.POST(payload);
@@ -82,10 +83,12 @@ static int httpPost(const String &address, const String &contentType, const Stri
 /**
  * @brief values を Ambient に送信する形式で retval にシリアライズ
  * 
- * @param values シリアライズするデータ（10個以下推奨）
+ * @param start データの先頭インデックス
+ * @param count データの（最大）個数
+ * @param writeKey Ambient のライトキー
  * @param[out] retval JSON 文字列
  */
-static void serializeEnvDatas(const size_t count, const String &writeKey, String *retval) {
+static void serializeEnvDatas(const size_t start, const size_t count, const String &writeKey, String *retval) {
 
   size_t              capacity = JSON_ARRAY_SIZE(count) + JSON_OBJECT_SIZE(2) + count * JSON_OBJECT_SIZE(5) + ADD_BYTES_SERIALIZE_ENVDATA * count + 10 + writeKey.length();
   DynamicJsonDocument doc(capacity);
@@ -94,7 +97,7 @@ static void serializeEnvDatas(const size_t count, const String &writeKey, String
 
   auto array = doc.createNestedArray("data");
 
-  for (size_t i = 0; i < _datas.size() && i < count; i++) {
+  for (size_t i = start; i < _datas.size() && i < count; i++) {
 
     auto data = _datas.at(i);
 
@@ -113,16 +116,20 @@ static void serializeEnvDatas(const size_t count, const String &writeKey, String
  * @brief _datas を Ambient 用の形式で addr に送信
  * 
  * @param addr 宛先の HTTP アドレス
- * @param writeKey ライトキー
+ * @param writeKey Ambient のライトキー
+ * @param start 送るデータの先頭インデックス
  * @param maxLength 1リクエストに含める envdata_t の最大数
  * @return size_t 実際に送られた envdata_t の個数
  */
-size_t postEnvdatas(const String &addr, const String &writeKey, const size_t maxLength) {
+size_t postEnvdatas(const String &addr, const String &writeKey, const size_t start, const size_t maxLength) {
+
+  if (_datas.empty() || _datas.size() < start)
+    return 0;
 
   String json;
-  size_t count = std::min(_datas.size(), maxLength);
+  size_t count = std::min(_datas.size() - start, maxLength);
 
-  serializeEnvDatas(count, writeKey, &json);
+  serializeEnvDatas(start, count, writeKey, &json);
 
   if (httpPost(addr, FPSTR(MIME_APPLICATION_JSON), json) == HTTP_CODE_OK)
     return count;

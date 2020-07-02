@@ -20,6 +20,7 @@ class MyWebServer : public ESP8266WebServer {
 public:
   using ESP8266WebServer::ESP8266WebServer;
 
+  // レスポンスの転送が完了する前に再起動がかかるのを防ぐために必要
   HTTPClientStatus getStatus() const {
     return _currentStatus;
   }
@@ -27,7 +28,7 @@ public:
 
 //! HTTP サーバー
 static MyWebServer _server(80);
-//! OTA Update
+//! OTA Updater
 static ESP8266HTTPUpdateServer _updater;
 
 static constexpr char IF_NONE_MATCH[] = "If-None-Match";
@@ -68,17 +69,21 @@ static PGM_P getContentType_P(String filename) {
   return PSTR("application/octet-stream");
 }
 
+static inline void methodNotAllowed() {
+  _server.send_P(HTTP_CODE_METHOD_NOT_ALLOWED, MIME_TEXT_PLAIN, PSTR("Method Not Allowed"));
+}
+
 /**
- * @brief path に対応するファイルを探し、あればレスポンスとして送る
+ * @brief @c path に対応するファイルを探し、あればレスポンスとして送る
  * 
  * @param path パス
- * @retval true ファイルがあった
- * @retval false Not Found
+ * @retval true 何らかのレスポンスを返した
+ * @retval false File Not Found
  */
 static bool handleFileRead(String path, HTTPMethod method, const String &if_none_match) {
 
   if (method != HTTP_GET && method != HTTP_HEAD) {
-    _server.send_P(HTTP_CODE_METHOD_NOT_ALLOWED, MIME_TEXT_PLAIN, PSTR("Method Not Allowed"));
+    methodNotAllowed();
     return true;
   }
 
@@ -93,7 +98,7 @@ static bool handleFileRead(String path, HTTPMethod method, const String &if_none
     // If-None-Match ヘッダが一致する場合は 304 Not Modified を返す
     auto etag = FPSTR(resource.etag);
     if (if_none_match == etag) {
-      _server.send(HTTP_CODE_NOT_MODIFIED, contentType, "");
+      _server.send(HTTP_CODE_NOT_MODIFIED, contentType, nullptr);
       return true;
     }
 
@@ -102,7 +107,7 @@ static bool handleFileRead(String path, HTTPMethod method, const String &if_none
       _server.send_P(HTTP_CODE_OK, contentType, resource.pointer, resource.length);
     } else { // HTTP_HEAD
       _server.setContentLength(resource.length);
-      _server.send(HTTP_CODE_OK, contentType, "");
+      _server.send(HTTP_CODE_OK, contentType, nullptr);
     }
 
     return true;
@@ -138,10 +143,26 @@ static void argsAsMap(const ESP8266WebServer &server, std::map<String, String> *
   }
 }
 
-static bool contains(const std::map<String, String> &map, const String &key) {
+/**
+ * @brief @c key が @c map に含まれているか調べる
+ * 
+ * @param map 
+ * @param key 
+ * @retval true @c key は @c map に含まれる
+ * @retval false @c key は @c map に含まれない
+ */
+static inline bool contains(const std::map<String, String> &map, const String &key) {
   return map.find(key) != map.end();
 }
 
+/**
+ * @brief @c keys の要素のうち、1つでも @c map に含まれているか調べる
+ * 
+ * @param map 
+ * @param keys 
+ * @retval true @c keys の要素のうち、少なくとも1つが @c map に含まれる
+ * @retval false @c keys の要素で @c map に含まれるものはない
+ */
 static bool containsAny(const std::map<String, String> &map, const std::vector<String> &keys) {
   for (auto &&k : keys) {
     if (contains(map, k))
@@ -150,25 +171,37 @@ static bool containsAny(const std::map<String, String> &map, const std::vector<S
   return false;
 }
 
-static bool badRequestIfArgLack(const std::map<String, String> &map, const std::vector<String> &keys) {
-  for (auto &&k : keys) {
+/**
+ * @brief 必須の引数 @c required_keys がすべて揃っていない場合、400 BAD REQUEST を返す
+ * 
+ * @param map 
+ * @param required_keys 必須の引数名
+ * @retval true 400 BAD REQUEST を返した
+ * @retval false @c required_keys がすべて揃っている
+ */
+static bool badRequestIfArgLack(const std::map<String, String> &map, const std::vector<String> &required_keys) {
+  for (auto &&k : required_keys) {
     if (!contains(map, k)) {
       _server.send_P(HTTP_CODE_BAD_REQUEST, MIME_TEXT_PLAIN, PSTR("Please provide required argument '"));
       _server.sendContent(k);
       _server.sendContent_P(PSTR("'"));
-      _server.sendContent("");
+      _server.sendContent(""); // End of response
       return true;
     }
   }
   return false;
 }
 
+/**
+ * @brief 再起動のメッセージをレスポンスで送った後に ESP.restart() する
+ */
 static void reboot() {
 
   if (!handleFileRead("/wait_reboot.html", HTTP_GET, "")) {
     _server.send_P(HTTP_CODE_OK, MIME_TEXT_PLAIN, PSTR("Rebooting..."));
   }
 
+  // レスポンスの転送完了まで待機
   while (_server.getStatus() != HC_NONE) {
     _server.handleClient();
     yield();
@@ -180,22 +213,25 @@ static void reboot() {
   delay(1000);
 }
 
-static void handleGetEnvdata() {
+/**
+ * @brief パス /envdata に対するハンドラ
+ */
+static void handleEnvdata() {
 
   auto method = _server.method();
   if (method != HTTP_GET && method != HTTP_HEAD) {
-    _server.send_P(HTTP_CODE_METHOD_NOT_ALLOWED, MIME_TEXT_PLAIN, PSTR("Method Not Allowed"));
+    methodNotAllowed();
     return;
   }
 
-  // 方針: DynamicJsonDocument (ArduinoJson) で一気にシリアライズするとメモリ不足になるので
-  // 　　  1要素ずつ DynamicJsonDocument でシリアライズし、chunk transfer で少しずつ送信する
+  // DynamicJsonDocument (ArduinoJson) で一気にシリアライズするとメモリ不足になるので
+  // 1要素ずつ DynamicJsonDocument でシリアライズし、chunk transfer で少しずつ送信する
 
   // Enable chunk transfer
   _server.setContentLength(CONTENT_LENGTH_UNKNOWN);
 
   if (method == HTTP_HEAD) {
-    _server.send(HTTP_CODE_OK, MIME_TEXT_PLAIN, "");
+    _server.send(HTTP_CODE_OK, MIME_TEXT_PLAIN, nullptr);
     return;
   }
 
@@ -230,14 +266,51 @@ static void handleGetEnvdata() {
   }
 
   _server.sendContent_P(PSTR("]}"));
-  // End of response
-  _server.sendContent("");
+  _server.sendContent(""); // End of response
 }
 
 static void handleGetSetting() {
+
+  auto method = _server.method();
+  if (method != HTTP_GET && method != HTTP_HEAD) {
+    methodNotAllowed();
+    return;
+  }
+
   String json;
   _setting.serialize(json);
-  _server.send(HTTP_CODE_OK, FPSTR(MIME_APPLICATION_JSON), json);
+
+  if (method == HTTP_HEAD) {
+    _server.setContentLength(json.length());
+    _server.send_P(HTTP_CODE_OK, MIME_APPLICATION_JSON, nullptr);
+  } else {
+    _server.send(HTTP_CODE_OK, FPSTR(MIME_APPLICATION_JSON), json);
+  }
+}
+
+static void handleBrightness() {
+
+  auto method = _server.method();
+  if (method != HTTP_GET && method != HTTP_HEAD) {
+    methodNotAllowed();
+    return;
+  }
+
+  static constexpr size_t capacity = JSON_OBJECT_SIZE(2) + 15;
+  DynamicJsonDocument     doc(capacity);
+
+  doc["brightness"] = _bn.getBrightness();
+  doc["adc"]        = _bn.calcAverageRawValue();
+
+  String json;
+  serializeJson(doc, json);
+
+  if (method == HTTP_HEAD) {
+    _server.setContentLength(json.length());
+    _server.send_P(HTTP_CODE_OK, MIME_APPLICATION_JSON, nullptr);
+  } else {
+    _server.send(HTTP_CODE_OK, FPSTR(MIME_APPLICATION_JSON), json);
+  }
 }
 
 static inline void badRequest(String message) {
@@ -472,25 +545,16 @@ void setupServer() {
 
   _updater.setup(&_server);
 
-  _server.on("/envdata", handleGetEnvdata);
+  _server.on("/envdata", handleEnvdata);
 
   _server.on("/setting", HTTP_GET, handleGetSetting);
+  _server.on("/setting", HTTP_HEAD, handleGetSetting);
 
   _server.on("/setting", HTTP_POST, handlePostSetting);
 
-  _server.on("/brightness", HTTP_GET, []() {
-    static constexpr size_t capacity = JSON_OBJECT_SIZE(2) + 15;
-    DynamicJsonDocument     doc(capacity);
+  _server.on("/brightness", handleBrightness);
 
-    doc["brightness"] = _bn.getBrightness();
-    doc["adc"]        = _bn.calcAverageRawValue();
-
-    String json;
-    serializeJson(doc, json);
-    _server.send(HTTP_CODE_OK, MIME_APPLICATION_JSON, json);
-  });
-
-  // パスに対するハンドラが定義されていない場合、SPIFFS にあるファイルを返そうとしてみる
+  // パスに対するハンドラが定義されていない場合、FS にあるファイルを返そうとしてみる
   _server.onNotFound([]() {
     if (handleFileRead(_server.uri(), _server.method(), _server.header(IF_NONE_MATCH)))
       return;
@@ -498,7 +562,7 @@ void setupServer() {
     _server.send_P(HTTP_CODE_NOT_FOUND, MIME_TEXT_PLAIN, PSTR("File Not Found"));
   });
 
-  // If-None-Match ヘッダを取得する
+  // If-None-Match ヘッダを取得できるように設定
   std::array<const char *, 1> collect_headers = {IF_NONE_MATCH};
   _server.collectHeaders(collect_headers.data(), collect_headers.size());
 

@@ -165,6 +165,47 @@ bool timeBefore(suseconds_t target) {
   return retval;
 }
 
+static bool enableAmbient() {
+  return _setting.use_ambient && _setting.ambient_channelid != 0 && _setting.ambient_writekey;
+}
+
+static bool enableCustomServer() {
+  return _setting.use_custom_server && _setting.custom_server_addr;
+}
+
+static size_t ambient_transfered       = 0;
+static size_t custom_server_transfered = 0;
+
+static void sendDataToAmbient() {
+
+  auto ambient_addr = "http://ambidata.io/api/v2/channels/" + String(_setting.ambient_channelid) + "/dataarray";
+  ambient_transfered += postEnvdatas(ambient_addr, _setting.ambient_writekey, ambient_transfered, DATA_SEND_MAXCOUNT);
+}
+
+static void sendDataToCustomServer() {
+
+  custom_server_transfered += postEnvdatas(_setting.custom_server_addr, _setting.custom_server_writekey, custom_server_transfered, DATA_SEND_MAXCOUNT);
+}
+
+static void removeSentEnvdatas() {
+
+  auto enable_ambient       = enableAmbient();
+  auto enable_custom_server = enableCustomServer();
+
+  if (enable_ambient && !enable_custom_server)
+    custom_server_transfered = ambient_transfered;
+  else if (!enable_ambient && enable_custom_server)
+    ambient_transfered = custom_server_transfered;
+
+  auto transfered = std::min(ambient_transfered, custom_server_transfered);
+
+  for (size_t i = 0; i < transfered; i++)
+    _datas.pop_front();
+
+  ambient_transfered -= transfered;
+  custom_server_transfered -= transfered;
+}
+
 /**
  * @brief メインループ
  * 
@@ -196,7 +237,7 @@ void loop() {
     }
 
     if (tm.tm_sec == 0 || tm.tm_sec == 30) {
-      if (_last_envdata.time == 0)
+      if (!_last_envdata.isValid())
         bmeInit();
       // 毎分 00 秒、30 秒に気温計測開始コマンドを送る
       startMeasureEnvironment(tm);
@@ -205,38 +246,16 @@ void loop() {
       readEnvironment();
     }
 
+    // envdata 送信関係
     // 重い処理なのでなるべくループの最後に実行する
-    if (tm.tm_sec == 3 && tm.tm_min % DATA_SEND_INTERVAL == 0 && !_datas.empty()) {
+    if (!_datas.empty() && tm.tm_min % DATA_SEND_INTERVAL == 0) {
 
-      size_t ambient_transfered, custom_server_transfered;
-      auto   enable_ambient       = _setting.use_ambient && _setting.ambient_channelid != 0 && _setting.ambient_writekey;
-      auto   enable_custom_server = _setting.use_custom_server && _setting.custom_server_addr;
-
-      if (enable_ambient) {
-        auto ambient_addr  = "http://ambidata.io/api/v2/channels/" + String(_setting.ambient_channelid) + "/dataarray";
-        ambient_transfered = postEnvdatas(ambient_addr, _setting.ambient_writekey, DATA_SEND_MAXCOUNT);
-
-        if (!enable_custom_server) {
-          for (size_t i = 0; i < ambient_transfered; i++)
-            _datas.pop_front();
-        }
-      }
-
-      if (enable_custom_server) {
-        if (enable_ambient)
-          yield();
-
-        custom_server_transfered = postEnvdatas(_setting.custom_server_addr, _setting.custom_server_writekey, DATA_SEND_MAXCOUNT);
-
-        if (!enable_ambient) {
-          for (size_t i = 0; i < custom_server_transfered; i++)
-            _datas.pop_front();
-        }
-      }
-
-      if (enable_ambient && enable_custom_server && ambient_transfered == custom_server_transfered) {
-        for (size_t i = 0; i < ambient_transfered; i++)
-          _datas.pop_front();
+      if (tm.tm_sec == 3 && enableAmbient()) {
+        sendDataToAmbient();
+      } else if (tm.tm_sec == 5 && enableCustomServer()) {
+        sendDataToCustomServer();
+      } else if (tm.tm_sec == 7) {
+        removeSentEnvdatas();
       }
     }
   }

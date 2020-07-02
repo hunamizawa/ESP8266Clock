@@ -49,7 +49,7 @@ void yieldServer();
 // main_network
 
 void   connectWiFi();
-size_t postEnvdatas(const String &addr, const String &writeKey, const size_t maxLength);
+size_t postEnvdatas(const String &addr, const String &writeKey, const size_t start, const size_t maxLength);
 
 // main_bme
 
