@@ -1,3 +1,0 @@
-- TCP の async 化
-- https 対応
-- String の UTF-8 入出力 (text/plain で日本語を返せるように)
