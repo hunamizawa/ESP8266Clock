@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>ESP8266Clock</title>
+</head>
+<body>
+  <p>再起動しています<br>お待ち下さい...</p>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+  <script>
+    // 再起動が済んだかどうか確認してリロード
+    function tryReload() {
+      $.ajax({
+        url: '/',
+        method: 'HEAD',
+        timeout: 3000
+      }).done(() => {
+        document.location.href = '/';
+      }).fail(() => {
+        setTimeout(tryReload, 1000);
+      });
+    }
+
+    $(() => {
+      $.get('/reboot', () => { });
+      setTimeout(tryReload, 3000);
+    });
+  </script>
+</body>
+</html>

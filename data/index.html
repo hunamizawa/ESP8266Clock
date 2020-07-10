@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <link rel="stylesheet" href="common.css">
+  <style>
+    .card {
+      margin-top: 16px;
+      margin-bottom: 16px;
+    }
+
+    meter {
+      margin-left: 16px;
+    }
+  </style>
+  <title>ESP8266Clock</title>
+</head>
+
+<body>
+  <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+    <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="/">ESP8266Clock</a>
+  </nav>
+
+  <div class="container">
+    <div class="row">
+
+      <main role="main" class="px-4">
+        <div id="display"
+          class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">ディスプレイ</h1>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">画面モード切り替え</h5>
+            <div id="panes" class="form-group">
+              <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="DATE_TIME"> 日付＋時刻
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="TEMP_HUMI_TIME"> 温度＋湿度＋時刻
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="PRES_TIME"> 気圧＋時刻
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="TIME"> 時刻のみ
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="pane" class="disable-until-load" disabled value="IP_ADDR"> IPアドレス表示
+                </label>
+              </div>
+            </div>
+            <div id="override_panes" class="form-group" style="margin-top: 16px;">
+              <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="override_pane" class="disable-until-load" disabled value="NORMAL"> 通常
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="override_pane" class="disable-until-load" disabled value="TEST"> 全点灯テスト
+                </label>
+                <label class="btn btn-outline-secondary">
+                  <input type="radio" name="override_pane" class="disable-until-load" disabled value="OFF"> 画面オフ
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">画面明るさ</h5>
+            <div class="custom-control custom-switch" style="display: inline-block; margin-right: 16px;">
+              <input type="checkbox" id="auto-brightness" class="custom-control-input disable-until-load" disabled>
+              <label class="custom-control-label" for="auto-brightness">自動</label>
+            </div>
+            <label for="brightness-range">画面明るさ：</label>
+            <span id="brightness" style="margin-right: 16px;"></span>
+            <input type="range" id="brightness-range" class="form-control-range custom-range disable-on-load" min="-1"
+              max="5" step="1" disabled>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">画面明るさ自動制御</h5>
+            <div style="display: flex; margin-top: 16px;">
+              <span>現在の周囲光センサ測定値：</span><span id="adc"></span>
+              <meter id="adc-meter" min="0" max="1024" style="flex-grow: 100;"></meter>
+            </div>
+            <span>周囲が明るいほど値が小さくなります</span>
+          </div>
+          <form action="/setting" method="POST" class="card-body">
+            <h5 class="card-title">しきい値設定</h5>
+            <div>
+              <label for="br-threshold-0-range">画面オフ と 画面明るさ 0 の境界：</label>
+              <span id="br-threshold-0" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-0-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-0" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-0-range">画面明るさ 0 と 1 の境界：</label>
+              <span id="br-threshold-1" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-1-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-1" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-1-range">画面明るさ 1 と 2 の境界：</label>
+              <span id="br-threshold-2" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-2-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-2" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-2-range">画面明るさ 2 と 3 の境界：</label>
+              <span id="br-threshold-3" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-3-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-3" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-3-range">画面明るさ 3 と 4 の境界：</label>
+              <span id="br-threshold-4" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-4-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-4" min="0" max="1025" step="5" disabled>
+            </div>
+            <div>
+              <label for="br-threshold-4-range">画面明るさ 4 と 5 の境界：</label>
+              <span id="br-threshold-5" style="margin-right: 16px;"></span>
+              <input type="range" id="br-threshold-5-range" class="form-control-range custom-range disable-until-load"
+                name="br-threshold-5" min="0" max="1025" step="5" disabled>
+            </div>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定</button>
+          </form>
+        </div>
+
+        <div id="設定"
+          class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">各種設定</h1>
+        </div>
+
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body require-reboot">
+            <h5 class="card-title">タイムゾーン</h5>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="tzarea">地域</label>
+                <select id="tzarea" name="tzarea" class="form-control disable-until-load" disabled></select>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="tzcity">都市名</label>
+                <select id="tzcity" name="tzcity" class="form-control disable-until-load" disabled></select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定して再起動</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body require-reboot">
+            <h5 class="card-title">NTP サーバー</h5>
+            <p class="card-text">※うるう秒を正しく表示するためには、SLEW モードで動作する NTP サーバーを指定しないで下さい</p>
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label for="ntp1">第1サーバー</label>
+                <input type="text" id="ntp1" class="form-control disable-until-load" disabled name="ntp1"
+                  autocomplete="off" maxlength="253" required>
+              </div>
+              <div class="form-group col-md-4">
+                <label for="ntp2">第2サーバー（オプション）</label>
+                <input type="text" id="ntp2" class="form-control disable-until-load" disabled name="ntp2"
+                  autocomplete="off" maxlength="253">
+              </div>
+              <div class="form-group col-md-4">
+                <label for="ntp3">第3サーバー（オプション）</label>
+                <input type="text" id="ntp3" class="form-control disable-until-load" disabled name="ntp3"
+                  autocomplete="off" maxlength="253">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定して再起動</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body">
+            <h5 class="card-title">海面更正</h5>
+            <p class="card-text">測定気圧（現地気圧）を海面気圧に変換（更正）するための設定です</p>
+            <div id="group-elev" class="form-group">
+              <label for="elev">設置場所の標高 (m)</label>
+              <input type="number" id="elev" class="form-control disable-until-load" disabled name="elev"
+                autocomplete="off" required>
+            </div>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body">
+            <h5 class="card-title">気温データ送信</h5>
+            <div class="form-group">
+              <div class="custom-control custom-switch">
+                <input type="checkbox" id="use-ambient" class="custom-control-input disable-until-load" disabled
+                  name="use-ambient" value="on">
+                <label class="custom-control-label" for="use-ambient">Ambient に気温データを送る</label>
+              </div>
+            </div>
+            <div id="group-ambient-channelid" class="form-group">
+              <label for="ambient-channelid">チャネル ID</label>
+              <input type="number" id="ambient-channelid" class="form-control disable-until-load" disabled
+                name="ambient-channelid" autocomplete="off" min="0">
+            </div>
+            <div id="group-ambient-writekey" class="form-group">
+              <label for="ambient-writekey">ライトキー</label>
+              <input type="text" id="ambient-writekey" class="form-control disable-until-load" disabled
+                name="ambient-writekey" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <div class="custom-control custom-switch">
+                <input type="checkbox" id="use-custom-server" class="custom-control-input disable-until-load" disabled
+                  name="use-custom-server" value="on">
+                <label class="custom-control-label" for="use-custom-server">
+                  Ambient 以外のサーバーに POST する（JSON のフォーマットは Ambient と共通）
+                </label>
+              </div>
+            </div>
+            <div id="group-custom-server-addr" class="form-group">
+              <label for="custom-server-addr">URL</label>
+              <input type="url" id="custom-server-addr" class="form-control disable-until-load" disabled
+                name="custom-server-addr" autocomplete="off">
+            </div>
+            <div id="group-custom-server-writekey" class="form-group">
+              <label for="custom-server-writekey">ライトキー</label>
+              <input type="text" id="custom-server-writekey" class="form-control disable-until-load" disabled
+                name="custom-server-writekey" autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>設定</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Wi-Fi 設定</h5>
+            <p class="card-text">
+              Wi-Fi 設定を開くには、
+            <ol>
+              <li>本体の [SELECT] ボタンを押しながら [RESET] ボタンを押します。</li>
+              <li>本体に「設定して下さい」と表示されたら、お使いのPCまたはスマホで、アクセスポイント「ESP8266Clock」に接続します。</li>
+              <li>「Wi-Fi ネットワークにログイン」などの通知をタップまたはクリックして、設定画面を開きます。</li>
+              <li>SSID とパスワードを入力します。</li>
+            </ol>
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <form action="/setting" method="POST" class="card-body require-reboot">
+            <h5 class="card-title">設定リセット</h5>
+            <p class="card-text">Wi-Fi 設定以外の設定を、出荷時設定にリセットします。</p>
+            <input type="hidden" name="reset" value="reset">
+            <button type="submit" class="btn btn-primary disable-until-load" disabled>リセットして再起動</button>
+          </form>
+        </div>
+
+        <div id="設定"
+          class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">ソフトウェアアップデート</h1>
+        </div>
+        <a class="btn btn-primary" href="/update" role="button">アップデート画面を開く</a>
+
+      </main>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.5.1.min.js"
+    integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+    integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+    crossorigin="anonymous"></script>
+  <script src="TZ.js"></script>
+  <script src="index.js"></script>
+</body>
+
+</html>
