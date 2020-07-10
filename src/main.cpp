@@ -6,7 +6,6 @@
 #include "TZDB.h"
 #include "envdata_t.h"
 #include <ArduinoJson.h>
-#include <FS.h>
 #include <TZ.h>
 #include <Wire.h>
 #include <map>
@@ -104,7 +103,7 @@ void setup() {
   // 別の Server を立ち上げても問題なくなる
 
   // FS が壊れていても、デフォルト値を使えば時計としての機能は損なわれない
-  assert_debug(SPIFFS.begin());
+  assert_debug(_fs.begin());
   //_datas.init();
   readSetting();
   setupServer();

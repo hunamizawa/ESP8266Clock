@@ -15,10 +15,12 @@
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WiFi.h>
 #include <ESPPerfectTime.h>
+#include <LittleFS.h>
 #include <MAX7219Display.h>
 
 static constexpr char   PATH_OF_SETTING[]           = "/setting";
 static constexpr size_t ADD_BYTES_SERIALIZE_ENVDATA = 43;
+static constexpr FS &   _fs                         = LittleFS;
 
 //! ユーザーが変更可能な時計の動作設定
 extern ClockSetting _setting;

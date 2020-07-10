@@ -11,7 +11,6 @@
 #include <ArduinoJson.h>
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
-#include <FS.h>
 #include <array>
 #include <map>
 #include <vector>
@@ -113,10 +112,10 @@ static bool handleFileRead(String path, HTTPMethod method, const String &if_none
     return true;
   }
 
-  if (!SPIFFS.exists(path))
+  if (!_fs.exists(path))
     return false;
 
-  auto file = SPIFFS.open(path, "r");
+  auto file = _fs.open(path, "r");
   if (!file)
     return false;
 
@@ -522,8 +521,8 @@ static void handlePostSetting() {
       return;
     }
 
-    if (SPIFFS.exists(PATH_OF_SETTING))
-      SPIFFS.remove(PATH_OF_SETTING);
+    if (_fs.exists(PATH_OF_SETTING))
+      _fs.remove(PATH_OF_SETTING);
 
     reboot();
     return;

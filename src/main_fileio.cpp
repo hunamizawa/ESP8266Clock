@@ -4,14 +4,13 @@
  */
 
 #include "main.h"
-#include <FS.h>
 
 /**
  * @brief 設定ファイルから設定を読み込む
  */
 void readSetting() {
 
-  File f = SPIFFS.open(PATH_OF_SETTING, "r");
+  File f = _fs.open(PATH_OF_SETTING, "r");
   if (f) {
     auto json = f.readString();
     _setting.deserialize(json);
@@ -32,7 +31,7 @@ void readSetting() {
  */
 bool saveSetting() {
   
-  File f = SPIFFS.open(PATH_OF_SETTING, "w");
+  File f = _fs.open(PATH_OF_SETTING, "w");
   if (!f)
     return false;
   _setting.serialize(f);
