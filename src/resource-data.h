@@ -16,6 +16,11 @@ extern const char   etag_index_html[] PROGMEM;
 extern const char   _index_js[] PROGMEM;
 extern const size_t len_index_js;
 extern const char   etag_index_js[] PROGMEM;
+#ifdef ENABLE_BINARY_SIGNING
+extern const char   _public_key[] PROGMEM;
+extern const size_t len_public_key;
+extern const char   etag_public_key[] PROGMEM;
+#endif
 extern const char   _TZ_js[] PROGMEM;
 extern const size_t len_TZ_js;
 extern const char   etag_TZ_js[] PROGMEM;

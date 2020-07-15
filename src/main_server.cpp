@@ -6,7 +6,6 @@
 #include "TZDB.h"
 #include "const.h"
 #include "main.h"
-#include "resource.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESP8266HTTPUpdateServer.h>

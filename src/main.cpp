@@ -13,6 +13,12 @@
 
 ClockSetting _setting;
 
+#ifdef ENABLE_BINARY_SIGNING
+static BearSSL::PublicKey       _signingPubKey(Resource::_public_key);
+static BearSSL::HashSHA256      _signingHash;
+static BearSSL::SigningVerifier _signingVerifier(&_signingPubKey);
+#endif
+
 /**
  * @brief 時刻同期を実行する
  * 
@@ -88,6 +94,11 @@ void setup() {
 
   // 電源投入時の電圧変動が落ち着くのと、Serial が確実に開くのを待つ
   delay(500);
+
+#ifdef ENABLE_BINARY_SIGNING
+  // バイナリの署名検証を有効化
+  Update.installSignature(&_signingHash, &_signingVerifier);
+#endif
 
   // SPI、ディスプレイ初期化
   displayAndBufferInit();

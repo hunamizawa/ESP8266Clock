@@ -10,6 +10,7 @@
 #include "display/Brightness.h"
 #include "display/MyBuffer.h"
 #include "myutil.h"
+#include "resource.h"
 #include "setting.h"
 #include <Arduino.h>
 #include <ESP8266HTTPClient.h>

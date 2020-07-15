@@ -39,8 +39,8 @@ cpp_file_footer = """
 } // namespace Resource
 """
 
-data_dir = env['PROJECT_DATA_DIR']
-src_dir = env['PROJECT_SRC_DIR']
+data_dir = env.subst("$PROJECT_DATA_DIR")
+src_dir = env.subst("$PROJECT_SRC_DIR")
 
 # 変数名に使えない文字を削除する用
 pattern = re.compile(r'[^0-9A-Za-z_]')
@@ -56,6 +56,14 @@ def get_var_name(file_path):
   # 数字から始まるファイル名対策として、先頭のパス区切り文字をわざと残す
   return del_invalid_char(file.replace(data_dir, ''))
 
+def wrap_ifdef_if(condition, defined, action):
+  if condition:
+    header_file.write('#ifdef %s\n' % (defined))
+    cpp_file.write('#ifdef %s\n' % (defined))
+  action()
+  if condition:
+    header_file.write('#endif\n')
+    cpp_file.write('#endif\n')
 
 def embed_as_binary(file_path, header_file, cpp_file):
   """ファイル file_path を .h/.cpp ファイルに埋め込む"""
@@ -87,14 +95,17 @@ with open(os.path.join(src_dir, 'resource-data.h'), 'w') as header_file:
 
     files = glob.glob(os.path.join(data_dir, '**'))
     for file in files:
-      embed_as_binary(file, header_file, cpp_file)
+      wrap_ifdef_if(os.path.basename(file) == 'public.key',
+        'ENABLE_BINARY_SIGNING',
+        lambda: embed_as_binary(file, header_file, cpp_file))
       print("Embedding %s" % (file))
 
     cpp_file.write('resource_t searchByPath(const String &path) {\n')
     for file in files:
-      cpp_file.write('  if (path == F("%s"))\n' % (file.replace(data_dir, '').replace('\\', '/')))
-      var_name = get_var_name(file)
-      cpp_file.write('    return {%s, len%s, etag%s};\n' % (var_name, var_name, var_name))
+      if os.path.basename(file) != 'public.key':
+        cpp_file.write('  if (path == F("%s"))\n' % (file.replace(data_dir, '').replace('\\', '/')))
+        var_name = get_var_name(file)
+        cpp_file.write('    return {%s, len%s, etag%s};\n' % (var_name, var_name, var_name))
     cpp_file.write('  return {0, 0, 0};\n')
     cpp_file.write('}')
 
